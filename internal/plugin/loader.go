@@ -46,7 +46,7 @@ func loadDir(dir string) []Plugin {
 		if ext != ".yaml" && ext != ".yml" {
 			continue
 		}
-		p, err := parseFile(filepath.Join(dir, e.Name()))
+		p, err := ParseFile(filepath.Join(dir, e.Name()))
 		if err != nil {
 			continue // skip malformed files
 		}
@@ -55,7 +55,8 @@ func loadDir(dir string) []Plugin {
 	return out
 }
 
-func parseFile(path string) (Plugin, error) {
+// ParseFile parses a single YAML plugin file.
+func ParseFile(path string) (Plugin, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Plugin{}, err

@@ -3,7 +3,6 @@ package plugin
 type Plugin struct {
 	Name		string		`yaml:"name"		json:"name"`
 	Description	string		`yaml:"description"	json:"description"`
-	Icon		string 		`yaml:"icon"		json:"icon"`
 	Commands	[]Command	`yaml:"commands"	json:"commands"`
 }
 
