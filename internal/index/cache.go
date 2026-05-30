@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Thitipong-PP/palet/internal/plugin"
 )
@@ -24,6 +25,7 @@ type cacheFile struct {
 
 // LoadCached loads plugins file-by-file, using the cached version for any
 // file whose hash hasn't changed and re-parsing only the ones that have.
+// It loads from both filesystem directories and embedded plugins.
 func LoadCached() []Entry {
 	path := cachePath()
 	cf := loadCacheFile(path)
@@ -31,6 +33,7 @@ func LoadCached() []Entry {
 	var plugins []plugin.Plugin
 	dirty := false
 
+	// Load from filesystem directories
 	for _, dir := range plugin.Dirs() {
 		entries, err := os.ReadDir(dir)
 		if err != nil {
@@ -65,8 +68,30 @@ func LoadCached() []Entry {
 		}
 	}
 
+	// Load from embedded plugins
+	embeddedPlugins := plugin.LoadEmbedded()
+	for _, p := range embeddedPlugins {
+		// Use a synthetic path for embedded plugins
+		syntheticPath := "embedded://" + p.Name
+		
+		// For embedded plugins, we always use them (simple approach - no hash checking)
+		// since they're immutable once built
+		if cached, ok := cf.Files[syntheticPath]; ok {
+			plugins = append(plugins, cached.Plugin)
+		} else {
+			cf.Files[syntheticPath] = cachedEntry{Hash: "embedded", Plugin: p}
+			plugins = append(plugins, p)
+			dirty = true
+		}
+	}
+
 	// prune entries for files that no longer exist
 	for absPath := range cf.Files {
+		// Skip embedded plugins (they don't have real filesystem paths)
+		if strings.HasPrefix(absPath, "embedded://") {
+			continue
+		}
+		// For filesystem paths, delete if file no longer exists
 		if _, err := os.Stat(absPath); os.IsNotExist(err) {
 			delete(cf.Files, absPath)
 			dirty = true
