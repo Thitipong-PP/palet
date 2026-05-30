@@ -8,7 +8,9 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+	"unicode"
 )
+
 
 // BuildCommand renders a Go text/template against the collected arg values.
 //
@@ -43,18 +45,68 @@ func BuildCommand(tmpl string, vals map[string]string) (string, error) {
 	return out, nil
 }
 
-// Run executes the built command through the user's shell, wiring stdio
-// straight through so the caller's terminal receives the output.
+// Run executes the built command without a shell intermediary. It parses the
+// command string into tokens respecting single- and double-quoted spans so
+// that arguments containing spaces (e.g. commit messages) survive intact.
 func Run(cmd string) error {
-    fields := strings.Fields(cmd)
-    if len(fields) == 0 {
-        return fmt.Errorf("nothing to run")
-    }
-    c := exec.Command(fields[0], fields[1:]...)
-    c.Stdin = os.Stdin
-    c.Stdout = os.Stdout
-    c.Stderr = os.Stderr
-    return c.Run()
+	args, err := splitArgs(cmd)
+	if err != nil {
+		return fmt.Errorf("parse command: %w", err)
+	}
+	if len(args) == 0 {
+		return fmt.Errorf("nothing to run")
+	}
+	c := exec.Command(args[0], args[1:]...)
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return c.Run()
+}
+
+// splitArgs splits a shell-like command string into tokens, honouring single
+// and double quotes. Backslash escapes inside double quotes are not processed
+// (matching the behaviour of most simple CLI tools). Unclosed quotes return an
+// error.
+func splitArgs(s string) ([]string, error) {
+	var args []string
+	var cur strings.Builder
+	inSingle, inDouble := false, false
+
+	for _, r := range s {
+		switch {
+		case inSingle:
+			if r == '\'' {
+				inSingle = false
+			} else {
+				cur.WriteRune(r)
+			}
+		case inDouble:
+			if r == '"' {
+				inDouble = false
+			} else {
+				cur.WriteRune(r)
+			}
+		case r == '\'':
+			inSingle = true
+		case r == '"':
+			inDouble = true
+		case unicode.IsSpace(r):
+			if cur.Len() > 0 {
+				args = append(args, cur.String())
+				cur.Reset()
+			}
+		default:
+			cur.WriteRune(r)
+		}
+	}
+
+	if inSingle || inDouble {
+		return nil, fmt.Errorf("unclosed quote in command")
+	}
+	if cur.Len() > 0 {
+		args = append(args, cur.String())
+	}
+	return args, nil
 }
 
 // Copy places the built command on the system clipboard.
@@ -69,16 +121,6 @@ func Copy(s string) error {
 		return fmt.Errorf("copy failed: %w", err)
 	}
 	return nil
-}
-
-func shell() string {
-	if runtime.GOOS == "windows" {
-		return "cmd"
-	}
-	if sh := os.Getenv("SHELL"); sh != "" {
-		return sh
-	}
-	return "sh"
 }
 
 // clipboardCmd picks the first available clipboard utility for the platform.

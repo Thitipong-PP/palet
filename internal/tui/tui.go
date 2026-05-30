@@ -535,6 +535,11 @@ func (m model) submitForm() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	if invalid := validator.ValidateChoices(m.selected.Command, vals); len(invalid) > 0 {
+		m.formErr = invalid[0]
+		return m, nil
+	}
+
 	cmd, err := executor.BuildCommand(m.selected.Command.Template, vals)
 	m.builtCmd = cmd
 	m.buildErr = err

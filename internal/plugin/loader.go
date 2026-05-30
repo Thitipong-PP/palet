@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -63,7 +64,7 @@ func loadDir(dir string) []Plugin {
 		}
 		p, err := ParseFile(filepath.Join(dir, e.Name()))
 		if err != nil {
-			continue // skip malformed files
+			continue
 		}
 		out = append(out, p)
 	}
@@ -98,13 +99,16 @@ func LoadEmbedded() []Plugin {
 		if err := yaml.Unmarshal(data, &p); err != nil {
 			continue
 		}
+		if err := p.Validate(); err != nil {
+			continue
+		}
 		out = append(out, p)
 	}
 	
 	return out
 }
 
-// ParseFile parses a single YAML plugin file.
+// ParseFile parses and validates a single YAML plugin file.
 func ParseFile(path string) (Plugin, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -113,6 +117,9 @@ func ParseFile(path string) (Plugin, error) {
 	var p Plugin
 	if err := yaml.Unmarshal(data, &p); err != nil {
 		return Plugin{}, err
+	}
+	if err := p.Validate(); err != nil {
+		return Plugin{}, fmt.Errorf("%s: %w", path, err)
 	}
 	return p, nil
 }

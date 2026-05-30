@@ -72,15 +72,13 @@ func LoadCached() []Entry {
 	// Load from embedded plugins
 	embeddedPlugins := plugin.LoadEmbedded()
 	for _, p := range embeddedPlugins {
-		// Use a synthetic path for embedded plugins
 		syntheticPath := "embedded://" + p.Name
-		
-		// For embedded plugins, we always use them (simple approach - no hash checking)
-		// since they're immutable once built
-		if cached, ok := cf.Files[syntheticPath]; ok {
+		hash := embeddedHash(p)
+
+		if cached, ok := cf.Files[syntheticPath]; ok && cached.Hash == hash {
 			plugins = append(plugins, cached.Plugin)
 		} else {
-			cf.Files[syntheticPath] = cachedEntry{Hash: embeddedHash(p), Plugin: p}
+			cf.Files[syntheticPath] = cachedEntry{Hash: hash, Plugin: p}
 			plugins = append(plugins, p)
 			dirty = true
 		}
