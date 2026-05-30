@@ -67,6 +67,10 @@ func loadDir(dir string) []Plugin {
 		if err != nil {
 			continue
 		}
+
+		if !p.MatchesOS() {
+			continue
+		}
 		out = append(out, p)
 	}
 	return out
@@ -99,6 +103,9 @@ func LoadEmbedded() []Plugin {
 		var p Plugin
 		if err := yaml.Unmarshal(data, &p); err != nil {
 			continue
+		}
+		if !p.MatchesOS() {
+		    continue
 		}
 		if err := p.Validate(); err != nil {
 			continue

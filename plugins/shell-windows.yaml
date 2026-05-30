@@ -1,0 +1,291 @@
+name: shell-windows
+description: Windows PowerShell commands
+icon: 🪟
+os: [windows]
+
+commands:
+  # ── navigate ──────────────────────────────────────────────────────────────
+  - name: Get-Location
+    description: Print current working directory (pwd)
+    template: "Get-Location"
+    args: []
+
+  - name: Get-ChildItem
+    description: List files in a directory (ls/dir)
+    template: "Get-ChildItem{{if .hidden}} -Force{{end}}{{if .dir}} \"{{.dir}}\"{{end}}"
+    args:
+      - name: hidden
+        description: Show hidden files?
+        type: bool
+        required: false
+        default: "false"
+      - name: dir
+        description: Directory to list (leave empty for current)
+        type: dir
+        required: false
+
+  # ── file operations ───────────────────────────────────────────────────────
+  - name: Copy-Item
+    description: Copy a file or directory (cp)
+    template: "Copy-Item{{if .recursive}} -Recurse{{end}} \"{{.source}}\" \"{{.destination}}\""
+    args:
+      - name: source
+        description: Source path
+        type: string
+        required: true
+      - name: destination
+        description: Destination path
+        type: string
+        required: true
+      - name: recursive
+        description: Copy directory recursively?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: Move-Item
+    description: Move or rename a file or directory (mv)
+    template: "Move-Item \"{{.source}}\" \"{{.destination}}\""
+    args:
+      - name: source
+        description: Source path
+        type: string
+        required: true
+      - name: destination
+        description: Destination path
+        type: string
+        required: true
+
+  - name: Remove-Item
+    description: Remove a file or directory (rm)
+    template: "Remove-Item{{if .recursive}} -Recurse{{end}}{{if .force}} -Force{{end}} \"{{.path}}\""
+    args:
+      - name: path
+        description: File or directory to remove
+        type: string
+        required: true
+      - name: recursive
+        description: Remove directory recursively?
+        type: bool
+        required: false
+        default: "false"
+      - name: force
+        description: Force remove without prompt?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: New-Item
+    description: Create a new file or directory
+    template: "New-Item -ItemType {{.type}} -Path \"{{.path}}\""
+    args:
+      - name: path
+        description: Path to create
+        type: string
+        required: true
+      - name: type
+        description: Item type
+        type: enum
+        required: true
+        default: "File"
+        choices: ["File", "Directory"]
+
+  - name: Get-Content
+    description: Print file contents (cat)
+    template: "Get-Content \"{{.file}}\""
+    args:
+      - name: file
+        description: File to read
+        type: file
+        required: true
+
+  # ── search ────────────────────────────────────────────────────────────────
+  - name: Select-String
+    description: Search for a pattern in files (grep)
+    template: "Select-String{{if .recursive}} -Recurse{{end}}{{if .ignore_case}} -CaseSensitive:$false{{end}} -Pattern \"{{.pattern}}\" -Path \"{{.path}}\""
+    args:
+      - name: pattern
+        description: Search pattern
+        type: string
+        required: true
+      - name: path
+        description: File or directory to search
+        type: string
+        required: true
+        default: "."
+      - name: recursive
+        description: Search recursively?
+        type: bool
+        required: false
+        default: "false"
+      - name: ignore_case
+        description: Case-insensitive search?
+        type: bool
+        required: false
+        default: "true"
+
+  - name: Get-ChildItem recursive
+    description: Find files matching a pattern (find)
+    template: "Get-ChildItem -Recurse -Filter \"{{.pattern}}\"{{if .dir}} -Path \"{{.dir}}\"{{end}}"
+    args:
+      - name: pattern
+        description: File pattern (e.g. *.log)
+        type: string
+        required: true
+      - name: dir
+        description: Starting directory (leave empty for current)
+        type: dir
+        required: false
+
+  # ── process ───────────────────────────────────────────────────────────────
+  - name: Get-Process
+    description: List running processes (ps)
+    template: "Get-Process{{if .name}} -Name \"{{.name}}\"{{end}}"
+    args:
+      - name: name
+        description: Filter by process name (leave empty for all)
+        type: string
+        required: false
+
+  - name: Stop-Process
+    description: Kill a process (kill)
+    template: "Stop-Process{{if .force}} -Force{{end}} -{{.by}} {{.value}}"
+    args:
+      - name: by
+        description: Kill by
+        type: enum
+        required: true
+        default: "Id"
+        choices: ["Id", "Name"]
+      - name: value
+        description: PID or process name
+        type: string
+        required: true
+      - name: force
+        description: Force kill?
+        type: bool
+        required: false
+        default: "false"
+
+  # ── network ───────────────────────────────────────────────────────────────
+  - name: Invoke-WebRequest
+    description: Download a file from a URL (wget/curl)
+    template: "Invoke-WebRequest -Uri \"{{.url}}\" -OutFile \"{{.output}}\""
+    args:
+      - name: url
+        description: URL to download
+        type: string
+        required: true
+      - name: output
+        description: Output filename
+        type: string
+        required: true
+
+  - name: Test-Connection
+    description: Test network connectivity (ping)
+    template: "Test-Connection -ComputerName \"{{.host}}\" -Count {{.count}}"
+    args:
+      - name: host
+        description: Hostname or IP address
+        type: string
+        required: true
+      - name: count
+        description: Number of pings
+        type: string
+        required: false
+        default: "4"
+
+  - name: netstat
+    description: Show network connections
+    template: "netstat -ano"
+    args: []
+
+  # ── system ────────────────────────────────────────────────────────────────
+  - name: Get-ComputerInfo
+    description: Show system information (uname)
+    template: "Get-ComputerInfo"
+    args: []
+
+  - name: Get-Disk
+    description: Show disk space usage (df)
+    template: "Get-PSDrive -PSProvider FileSystem"
+    args: []
+
+  - name: whoami
+    description: Print current username
+    template: "whoami"
+    args: []
+
+  - name: Get-Service
+    description: List Windows services
+    template: "Get-Service{{if .name}} -Name \"{{.name}}\"{{end}}"
+    args:
+      - name: name
+        description: Filter by service name (leave empty for all)
+        type: string
+        required: false
+
+  - name: Start-Service
+    description: Start a Windows service
+    template: "Start-Service -Name \"{{.name}}\""
+    args:
+      - name: name
+        description: Service name
+        type: string
+        required: true
+
+  - name: Stop-Service
+    description: Stop a Windows service
+    template: "Stop-Service -Name \"{{.name}}\""
+    args:
+      - name: name
+        description: Service name
+        type: string
+        required: true
+
+  # ── archive ───────────────────────────────────────────────────────────────
+  - name: Compress-Archive
+    description: Create a zip archive
+    template: "Compress-Archive -Path \"{{.path}}\" -DestinationPath \"{{.archive}}\""
+    args:
+      - name: path
+        description: File or directory to compress
+        type: string
+        required: true
+      - name: archive
+        description: Output archive name (e.g. backup.zip)
+        type: string
+        required: true
+
+  - name: Expand-Archive
+    description: Extract a zip archive
+    template: "Expand-Archive -Path \"{{.archive}}\" -DestinationPath \"{{.dest}}\""
+    args:
+      - name: archive
+        description: Archive file to extract
+        type: file
+        required: true
+      - name: dest
+        description: Destination directory
+        type: dir
+        required: true
+        default: "."
+
+  # ── environment ───────────────────────────────────────────────────────────
+  - name: Get-ChildItem env
+    description: List all environment variables
+    template: "Get-ChildItem Env:"
+    args: []
+
+  - name: Set-Variable
+    description: Set an environment variable
+    template: "$env:{{.name}} = \"{{.value}}\""
+    args:
+      - name: name
+        description: Variable name
+        type: string
+        required: true
+      - name: value
+        description: Variable value
+        type: string
+        required: true

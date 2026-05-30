@@ -1,0 +1,197 @@
+name: shell
+description: Common shell commands (cross-platform)
+
+commands:
+  # ── navigate ──────────────────────────────────────────────────────────────
+  - name: pwd
+    description: Print current working directory
+    template: "pwd"
+    args: []
+
+  - name: ls
+    description: List files in a directory
+    template: "ls{{if .all}} -a{{end}}{{if .long}} -l{{end}}{{if .dir}} {{.dir}}{{end}}"
+    args:
+      - name: all
+        description: Show hidden files?
+        type: bool
+        required: false
+        default: "false"
+      - name: long
+        description: Long format with details?
+        type: bool
+        required: false
+        default: "false"
+      - name: dir
+        description: Directory to list (leave empty for current)
+        type: dir
+        required: false
+
+  # ── file operations ───────────────────────────────────────────────────────
+  - name: cp
+    description: Copy a file or directory
+    template: "cp{{if .recursive}} -r{{end}} {{.source}} {{.destination}}"
+    args:
+      - name: source
+        description: Source file or directory
+        type: string
+        required: true
+      - name: destination
+        description: Destination path
+        type: string
+        required: true
+      - name: recursive
+        description: Copy directory recursively?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: mv
+    description: Move or rename a file or directory
+    template: "mv {{.source}} {{.destination}}"
+    args:
+      - name: source
+        description: Source path
+        type: string
+        required: true
+      - name: destination
+        description: Destination path
+        type: string
+        required: true
+
+  - name: rm
+    description: Remove a file or directory
+    template: "rm{{if .recursive}} -r{{end}}{{if .force}} -f{{end}} {{.path}}"
+    args:
+      - name: path
+        description: File or directory to remove
+        type: string
+        required: true
+      - name: recursive
+        description: Remove directory recursively?
+        type: bool
+        required: false
+        default: "false"
+      - name: force
+        description: Force remove without prompt?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: mkdir
+    description: Create a new directory
+    template: "mkdir{{if .parents}} -p{{end}} {{.path}}"
+    args:
+      - name: path
+        description: Directory path to create
+        type: string
+        required: true
+      - name: parents
+        description: Create parent directories as needed?
+        type: bool
+        required: false
+        default: "true"
+
+  - name: touch
+    description: Create an empty file or update timestamp
+    template: "touch {{.file}}"
+    args:
+      - name: file
+        description: File path
+        type: string
+        required: true
+
+  - name: cat
+    description: Print file contents
+    template: "cat {{.file}}"
+    args:
+      - name: file
+        description: File to print
+        type: file
+        required: true
+
+  - name: echo
+    description: Print text to terminal
+    template: "echo \"{{.text}}\""
+    args:
+      - name: text
+        description: Text to print
+        type: string
+        required: true
+
+  # ── process ───────────────────────────────────────────────────────────────
+  - name: ps
+    description: List running processes
+    template: "ps {{.flags}}"
+    args:
+      - name: flags
+        description: Display format
+        type: enum
+        required: false
+        default: "aux"
+        choices: ["aux", "ef", "aux --sort=-%cpu", "aux --sort=-%mem"]
+
+  - name: kill
+    description: Kill a process by PID
+    template: "kill{{if .force}} -9{{end}} {{.pid}}"
+    args:
+      - name: pid
+        description: Process ID
+        type: string
+        required: true
+      - name: force
+        description: Force kill (-9)?
+        type: bool
+        required: false
+        default: "false"
+
+  # ── disk ──────────────────────────────────────────────────────────────────
+  - name: df
+    description: Show disk space usage
+    template: "df{{if .human}} -h{{end}}"
+    args:
+      - name: human
+        description: Human-readable sizes?
+        type: bool
+        required: false
+        default: "true"
+
+  - name: du
+    description: Show directory size
+    template: "du{{if .human}} -h{{end}}{{if .summarize}} -s{{end}} {{.path}}"
+    args:
+      - name: path
+        description: Directory to check
+        type: dir
+        required: true
+        default: "."
+      - name: human
+        description: Human-readable sizes?
+        type: bool
+        required: false
+        default: "true"
+      - name: summarize
+        description: Show total only?
+        type: bool
+        required: false
+        default: "true"
+
+  # ── misc ─────────────────────────────────────────────────────────────────
+  - name: which
+    description: Find location of a command
+    template: "which {{.command}}"
+    args:
+      - name: command
+        description: Command name to find
+        type: string
+        required: true
+
+  - name: env
+    description: List all environment variables
+    template: "env"
+    args: []
+
+  - name: clear
+    description: Clear the terminal screen
+    template: "clear"
+    args: []
