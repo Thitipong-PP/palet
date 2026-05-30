@@ -1,6 +1,5 @@
 name: shell-windows
 description: Windows PowerShell commands
-icon: 🪟
 os: [windows]
 
 commands:
