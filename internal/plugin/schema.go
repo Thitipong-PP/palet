@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 )
 
@@ -9,6 +10,7 @@ type Plugin struct {
 	Name        string    `yaml:"name"        json:"name"`
 	Description string    `yaml:"description" json:"description"`
 	Commands    []Command `yaml:"commands"    json:"commands"`
+	OS          []string  `yaml:"os"          json:"os"` // e.g. [linux, darwin, windows] — empty means all
 }
 
 type Command struct {
@@ -106,4 +108,18 @@ func validateArg(pluginName, cmdName string, idx int, arg Arg) error {
 		}
 	}
 	return nil
+}
+
+// MatchesOS returns true if this plugin should be loaded on the current OS.
+// An empty OS list means the plugin is cross-platform and always loaded.
+func (p Plugin) MatchesOS() bool {
+	if len(p.OS) == 0 {
+		return true
+	}
+	for _, os := range p.OS {
+		if os == runtime.GOOS {
+			return true
+		}
+	}
+	return false
 }
