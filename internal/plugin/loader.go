@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
@@ -90,7 +91,7 @@ func LoadEmbedded() []Plugin {
 			continue
 		}
 		
-		data, err := embeddedPlugins.ReadFile(filepath.Join("plugins", e.Name()))
+		data, err := embeddedPlugins.ReadFile(path.Join("plugins", e.Name()))
 		if err != nil {
 			continue
 		}
