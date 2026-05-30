@@ -17,6 +17,18 @@ cd palet
 go build -o palet .
 ```
 
+Then make sure `$GOPATH/bin` is in your PATH:
+
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export PATH="$PATH:$(go env GOPATH)/bin"
+
+# Then reload
+source ~/.zshrc   # or source ~/.bashrc
+```
+
+Already done? just run `palet` directly.
+
 ## Usage
 Run palet to open the command palette.
 ```bash

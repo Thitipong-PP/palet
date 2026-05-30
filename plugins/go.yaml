@@ -1,67 +1,155 @@
 name: go
-description: Go programming language commands
+description: The Go programming language tool
 
 commands:
+  # ── run ───
   - name: go run
-    description: Run a Go program
-    template: "go run {{.file}}"
+    description: Compile and run Go program
+    template: "go run{{if .race}} -race{{end}} {{.files}}"
     args:
-      - name: file
-        description: Path to the .go file or main package
+      - name: files
+        description: Go source files to run
         type: file
         required: true
+        default: "main.go"
+      - name: race
+        description: Enable data race detection
+        type: bool
+        required: false
 
+  # ── build & install ───
   - name: go build
-    description: Compile a Go package
-    template: "go build {{if .output}}-o {{.output}}{{end}} {{.package}}"
+    description: Compile packages and dependencies
+    template: "go build{{if .output}} -o {{.output}}{{end}}{{if .buildmode}} -buildmode={{.buildmode}}{{end}}{{if .race}} -race{{end}} {{.package}}"
     args:
       - name: package
-        description: Package to build (e.g. ./cmd/myapp or .)
+        description: Package to build
         type: string
         required: true
         default: "."
       - name: output
-        description: Output binary name (optional)
+        description: Output file or directory path
         type: string
         required: false
         flag: "-o"
+      - name: buildmode
+        description: Build mode to use
+        type: enum
+        required: false
+        choices: ["default", "archive", "c-archive", "c-shared", "shared", "exe", "pie", "plugin"]
+      - name: race
+        description: Enable data race detection
+        type: bool
+        required: false
 
-  - name: go test
-    description: Run tests in a package
-    template: "go test {{.flags}} {{.package}}"
+  - name: go install
+    description: Compile and install packages and dependencies
+    template: "go install {{.package}}"
     args:
       - name: package
-        description: Package path (e.g. ./... for all)
+        description: Package to install
+        type: string
+        required: true
+        default: "."
+
+  # ── test & verify ───
+  - name: go test
+    description: Test packages
+    template: "go test{{if .verbose}} -v{{end}}{{if .race}} -race{{end}}{{if .cover}} -cover{{end}}{{if .run}} -run \"{{.run}}\"{{end}} {{.package}}"
+    args:
+      - name: package
+        description: Package to test
         type: string
         required: true
         default: "./..."
-      - name: flags
-        description: Extra flags
-        type: enum
+      - name: verbose
+        description: Verbose output
+        type: bool
         required: false
-        default: "-v"
-        choices: ["-v", "-race", "-v -race", "-short"]
+      - name: race
+        description: Enable data race detection
+        type: bool
+        required: false
+      - name: cover
+        description: Enable coverage analysis
+        type: bool
+        required: false
+      - name: run
+        description: Run specific tests matching regex
+        type: string
+        required: false
 
+  - name: go vet
+    description: Report likely mistakes in packages
+    template: "go vet {{.package}}"
+    args:
+      - name: package
+        description: Package to vet
+        type: string
+        required: true
+        default: "./..."
+
+  # ── module management ───
   - name: go get
-    description: Add or upgrade a dependency
-    template: "go get {{.module}}"
+    description: Add dependencies to current module and install them
+    template: "go get{{if .update}} -u{{end}} {{.package}}"
+    args:
+      - name: package
+        description: Package to add or update (e.g. github.com/user/repo)
+        type: string
+        required: true
+      - name: update
+        description: Update named packages to latest minor or patch releases
+        type: bool
+        required: false
+
+  - name: go mod init
+    description: Initialize new module in current directory
+    template: "go mod init {{.module}}"
     args:
       - name: module
-        description: Module path (e.g. github.com/user/repo@latest)
+        description: Module path (e.g. github.com/user/repo)
         type: string
         required: true
 
   - name: go mod tidy
-    description: Remove unused dependencies and add missing ones
-    template: "go mod tidy"
+    description: Add missing and remove unused modules
+    template: "go mod tidy{{if .verbose}} -v{{end}}"
+    args:
+      - name: verbose
+        description: Print information about removed modules
+        type: bool
+        required: false
+
+  - name: go mod vendor
+    description: Make vendored copy of dependencies
+    template: "go mod vendor"
     args: []
 
+  # ── tools & formatting ───
   - name: go fmt
-    description: Format Go source code
+    description: Format package sources
     template: "go fmt {{.package}}"
     args:
       - name: package
-        description: Package path (default all)
+        description: Package to format
         type: string
-        required: false
+        required: true
         default: "./..."
+
+  - name: go clean
+    description: Remove object files and cached files
+    template: "go clean{{if .modcache}} -modcache{{end}}{{if .testcache}} -testcache{{end}}{{if .cache}} -cache{{end}}"
+    args:
+      - name: modcache
+        description: Remove the entire module download cache
+        type: bool
+        required: false
+      - name: testcache
+        description: Expire all test results in the build cache
+        type: bool
+        required: false
+      - name: cache
+        description: Remove the entire go build cache
+        type: bool
+        required: false

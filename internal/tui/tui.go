@@ -388,7 +388,7 @@ func (m model) renderEntry(e index.Entry, selected bool) string {
 // search field, footer).
 func (m model) listHeight() int {
 	// blank+brand+blank (3) + bordered search (3) + blank (1) + blank+hints (2).
-	h := m.height - 10
+	h := m.height - 15
 	if h < 3 {
 		h = 3
 	}
