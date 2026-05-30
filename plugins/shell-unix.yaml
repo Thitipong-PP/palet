@@ -1,0 +1,294 @@
+name: shell-unix
+description: Unix/Linux shell commands
+os: [linux, darwin]
+
+commands:
+  # ── permissions ───────────────────────────────────────────────────────────
+  - name: chmod
+    description: Change file permissions
+    template: "chmod{{if .recursive}} -R{{end}} {{.mode}} {{.path}}"
+    args:
+      - name: mode
+        description: Permission mode (e.g. 755, 644, +x)
+        type: string
+        required: true
+      - name: path
+        description: File or directory
+        type: string
+        required: true
+      - name: recursive
+        description: Apply recursively?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: chown
+    description: Change file owner
+    template: "chown{{if .recursive}} -R{{end}} {{.owner}} {{.path}}"
+    args:
+      - name: owner
+        description: Owner (e.g. user or user:group)
+        type: string
+        required: true
+      - name: path
+        description: File or directory
+        type: string
+        required: true
+      - name: recursive
+        description: Apply recursively?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: sudo
+    description: Run a command as superuser
+    template: "sudo {{.command}}"
+    args:
+      - name: command
+        description: Command to run as root
+        type: string
+        required: true
+
+  # ── search ────────────────────────────────────────────────────────────────
+  - name: grep
+    description: Search for a pattern in files
+    template: "grep{{if .recursive}} -r{{end}}{{if .ignore_case}} -i{{end}}{{if .line_number}} -n{{end}} \"{{.pattern}}\" {{.path}}"
+    args:
+      - name: pattern
+        description: Search pattern
+        type: string
+        required: true
+      - name: path
+        description: File or directory to search
+        type: string
+        required: true
+        default: "."
+      - name: recursive
+        description: Search recursively?
+        type: bool
+        required: false
+        default: "false"
+      - name: ignore_case
+        description: Case-insensitive search?
+        type: bool
+        required: false
+        default: "false"
+      - name: line_number
+        description: Show line numbers?
+        type: bool
+        required: false
+        default: "true"
+
+  - name: find
+    description: Find files matching a pattern
+    template: "find {{.path}} -name \"{{.pattern}}\"{{if .type}} -type {{.type}}{{end}}"
+    args:
+      - name: path
+        description: Starting directory
+        type: dir
+        required: true
+        default: "."
+      - name: pattern
+        description: Name pattern (e.g. *.log)
+        type: string
+        required: true
+      - name: type
+        description: File type filter
+        type: enum
+        required: false
+        choices: ["f", "d", "l"]
+
+  # ── archive ───────────────────────────────────────────────────────────────
+  - name: tar create
+    description: Create a tar archive
+    template: "tar -czf {{.archive}} {{.path}}"
+    args:
+      - name: archive
+        description: Output archive name (e.g. backup.tar.gz)
+        type: string
+        required: true
+      - name: path
+        description: File or directory to archive
+        type: string
+        required: true
+
+  - name: tar extract
+    description: Extract a tar archive
+    template: "tar -xzf {{.archive}}{{if .dest}} -C {{.dest}}{{end}}"
+    args:
+      - name: archive
+        description: Archive file to extract
+        type: file
+        required: true
+      - name: dest
+        description: Destination directory (leave empty for current)
+        type: dir
+        required: false
+
+  - name: tar list
+    description: List contents of a tar archive
+    template: "tar -tzf {{.archive}}"
+    args:
+      - name: archive
+        description: Archive file
+        type: file
+        required: true
+
+  # ── network ───────────────────────────────────────────────────────────────
+  - name: curl
+    description: Transfer data from a URL
+    template: "curl{{if .output}} -o {{.output}}{{end}}{{if .silent}} -s{{end}} \"{{.url}}\""
+    args:
+      - name: url
+        description: URL to fetch
+        type: string
+        required: true
+      - name: output
+        description: Save to file (leave empty to print)
+        type: string
+        required: false
+      - name: silent
+        description: Silent mode (no progress)?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: wget
+    description: Download a file from a URL
+    template: "wget{{if .output}} -O {{.output}}{{end}} \"{{.url}}\""
+    args:
+      - name: url
+        description: URL to download
+        type: string
+        required: true
+      - name: output
+        description: Output filename (leave empty for default)
+        type: string
+        required: false
+
+  - name: ping
+    description: Test network connectivity
+    template: "ping{{if .count}} -c {{.count}}{{end}} {{.host}}"
+    args:
+      - name: host
+        description: Hostname or IP address
+        type: string
+        required: true
+      - name: count
+        description: Number of packets to send
+        type: string
+        required: false
+        default: "4"
+
+  - name: netstat
+    description: Show network connections
+    template: "netstat{{if .listen}} -l{{end}} -tun"
+    args:
+      - name: listen
+        description: Show only listening ports?
+        type: bool
+        required: false
+        default: "true"
+
+  # ── system ────────────────────────────────────────────────────────────────
+  - name: top
+    description: Show live system resource usage
+    template: "top"
+    args: []
+
+  - name: uname
+    description: Show system information
+    template: "uname{{if .all}} -a{{end}}"
+    args:
+      - name: all
+        description: Show all info?
+        type: bool
+        required: false
+        default: "true"
+
+  - name: uptime
+    description: Show how long the system has been running
+    template: "uptime"
+    args: []
+
+  - name: whoami
+    description: Print current username
+    template: "whoami"
+    args: []
+
+  - name: man
+    description: Show manual page for a command
+    template: "man {{.command}}"
+    args:
+      - name: command
+        description: Command to look up
+        type: string
+        required: true
+
+  # ── pipe helpers ──────────────────────────────────────────────────────────
+  - name: head
+    description: Show first lines of a file
+    template: "head -n {{.lines}} {{.file}}"
+    args:
+      - name: file
+        description: File to read
+        type: file
+        required: true
+      - name: lines
+        description: Number of lines to show
+        type: string
+        required: false
+        default: "10"
+
+  - name: tail
+    description: Show last lines of a file
+    template: "tail{{if .follow}} -f{{end}} -n {{.lines}} {{.file}}"
+    args:
+      - name: file
+        description: File to read
+        type: file
+        required: true
+      - name: lines
+        description: Number of lines to show
+        type: string
+        required: false
+        default: "10"
+      - name: follow
+        description: Follow file in real-time?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: wc
+    description: Count lines, words, or characters in a file
+    template: "wc {{.flag}} {{.file}}"
+    args:
+      - name: file
+        description: File to count
+        type: file
+        required: true
+      - name: flag
+        description: What to count
+        type: enum
+        required: false
+        default: "-l"
+        choices: ["-l (lines)", "-w (words)", "-c (bytes)", "-m (chars)"]
+
+  - name: sort
+    description: Sort lines in a file
+    template: "sort{{if .reverse}} -r{{end}}{{if .numeric}} -n{{end}} {{.file}}"
+    args:
+      - name: file
+        description: File to sort
+        type: file
+        required: true
+      - name: reverse
+        description: Sort in reverse order?
+        type: bool
+        required: false
+        default: "false"
+      - name: numeric
+        description: Numeric sort?
+        type: bool
+        required: false
+        default: "false"
