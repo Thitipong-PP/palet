@@ -1,0 +1,248 @@
+name: npm
+description: Node.js package manager commands
+
+commands:
+  # ── init ─────────────────────────────────────────────────────────────────
+  - name: npm init
+    description: Initialise a new Node.js project
+    template: "npm init{{if .yes}} -y{{end}}"
+    args:
+      - name: yes
+        description: Skip prompts and use defaults?
+        type: bool
+        required: false
+        default: "true"
+
+  # ── install ───────────────────────────────────────────────────────────────
+  - name: npm install
+    description: Install all dependencies from package.json
+    template: "npm install{{if .frozen}} --frozen-lockfile{{end}}"
+    args:
+      - name: frozen
+        description: Fail if package-lock.json would change?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm install package
+    description: Install a specific package
+    template: "npm install {{.package}}{{if .save_dev}} --save-dev{{end}}{{if .save_exact}} --save-exact{{end}}{{if .global}} -g{{end}}"
+    args:
+      - name: package
+        description: Package name (e.g. lodash or lodash@4.17.21)
+        type: string
+        required: true
+      - name: save_dev
+        description: Save as devDependency?
+        type: bool
+        required: false
+        default: "false"
+      - name: save_exact
+        description: Pin exact version?
+        type: bool
+        required: false
+        default: "false"
+      - name: global
+        description: Install globally?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm ci
+    description: Clean install from package-lock.json (recommended for CI)
+    template: "npm ci"
+    args: []
+
+  - name: npm uninstall
+    description: Remove a package
+    template: "npm uninstall {{.package}}{{if .global}} -g{{end}}"
+    args:
+      - name: package
+        description: Package name
+        type: string
+        required: true
+      - name: global
+        description: Remove globally installed package?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm update
+    description: Update packages to latest allowed versions
+    template: "npm update{{if .package}} {{.package}}{{end}}"
+    args:
+      - name: package
+        description: Specific package to update (leave empty for all)
+        type: string
+        required: false
+
+  # ── scripts ───────────────────────────────────────────────────────────────
+  - name: npm run
+    description: Run a script defined in package.json
+    template: "npm run {{.script}}"
+    args:
+      - name: script
+        description: Script name (e.g. dev, build, test)
+        type: string
+        required: true
+
+  - name: npm start
+    description: Run the start script
+    template: "npm start"
+    args: []
+
+  - name: npm test
+    description: Run the test script
+    template: "npm test{{if .watch}} -- --watch{{end}}"
+    args:
+      - name: watch
+        description: Run in watch mode?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm build
+    description: Run the build script
+    template: "npm run build"
+    args: []
+
+  # ── info ──────────────────────────────────────────────────────────────────
+  - name: npm list
+    description: List installed packages
+    template: "npm list{{if .global}} -g{{end}} --depth {{.depth}}"
+    args:
+      - name: depth
+        description: Dependency depth to show
+        type: enum
+        required: false
+        default: "0"
+        choices: ["0", "1", "2", "Infinity"]
+      - name: global
+        description: List globally installed packages?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm outdated
+    description: Check for outdated packages
+    template: "npm outdated{{if .global}} -g{{end}}"
+    args:
+      - name: global
+        description: Check global packages?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm info
+    description: Show details about a package
+    template: "npm info {{.package}}{{if .field}} {{.field}}{{end}}"
+    args:
+      - name: package
+        description: Package name
+        type: string
+        required: true
+      - name: field
+        description: Specific field to show (e.g. version, dependencies)
+        type: string
+        required: false
+
+  - name: npm search
+    description: Search for packages in the registry
+    template: "npm search {{.query}}"
+    args:
+      - name: query
+        description: Search term
+        type: string
+        required: true
+
+  # ── audit ─────────────────────────────────────────────────────────────────
+  - name: npm audit
+    description: Check for security vulnerabilities
+    template: "npm audit{{if .fix}} fix{{end}}"
+    args:
+      - name: fix
+        description: Auto-fix vulnerabilities?
+        type: bool
+        required: false
+        default: "false"
+
+  # ── publish ───────────────────────────────────────────────────────────────
+  - name: npm publish
+    description: Publish package to the registry
+    template: "npm publish{{if .tag}} --tag {{.tag}}{{end}}{{if .dry_run}} --dry-run{{end}}"
+    args:
+      - name: tag
+        description: Distribution tag (e.g. latest, beta, next)
+        type: string
+        required: false
+        default: "latest"
+      - name: dry_run
+        description: Dry run without actually publishing?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: npm version
+    description: Bump package version
+    template: "npm version {{.bump}}"
+    args:
+      - name: bump
+        description: Version bump type
+        type: enum
+        required: true
+        default: "patch"
+        choices: ["patch", "minor", "major", "prepatch", "preminor", "premajor"]
+
+  # ── cache ─────────────────────────────────────────────────────────────────
+  - name: npm cache clean
+    description: Clear the npm cache
+    template: "npm cache clean --force"
+    args: []
+
+  - name: npm cache verify
+    description: Verify cache integrity
+    template: "npm cache verify"
+    args: []
+
+  # ── config ────────────────────────────────────────────────────────────────
+  - name: npm config get
+    description: Get an npm config value
+    template: "npm config get {{.key}}"
+    args:
+      - name: key
+        description: Config key (e.g. registry, prefix)
+        type: string
+        required: true
+
+  - name: npm config set
+    description: Set an npm config value
+    template: "npm config set {{.key}} {{.value}}"
+    args:
+      - name: key
+        description: Config key
+        type: string
+        required: true
+      - name: value
+        description: Config value
+        type: string
+        required: true
+
+  - name: npm config list
+    description: List all npm config settings
+    template: "npm config list{{if .json}} --json{{end}}"
+    args:
+      - name: json
+        description: Output as JSON?
+        type: bool
+        required: false
+        default: "false"
+
+  # ── exec ──────────────────────────────────────────────────────────────────
+  - name: npx
+    description: Run a package binary without installing
+    template: "npx {{.package}}"
+    args:
+      - name: package
+        description: Package or binary to run (e.g. create-react-app my-app)
+        type: string
+        required: true
