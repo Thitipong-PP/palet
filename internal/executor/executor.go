@@ -46,14 +46,15 @@ func BuildCommand(tmpl string, vals map[string]string) (string, error) {
 // Run executes the built command through the user's shell, wiring stdio
 // straight through so the caller's terminal receives the output.
 func Run(cmd string) error {
-	if strings.TrimSpace(cmd) == "" {
-		return fmt.Errorf("nothing to run")
-	}
-	c := exec.Command(shell(), "-c", cmd)
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	return c.Run()
+    fields := strings.Fields(cmd)
+    if len(fields) == 0 {
+        return fmt.Errorf("nothing to run")
+    }
+    c := exec.Command(fields[0], fields[1:]...)
+    c.Stdin = os.Stdin
+    c.Stdout = os.Stdout
+    c.Stderr = os.Stderr
+    return c.Run()
 }
 
 // Copy places the built command on the system clipboard.
