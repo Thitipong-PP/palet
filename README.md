@@ -1,6 +1,8 @@
 # PALET
 A terminal command palette. Search commands, fill in args, and run — no more memorising flags.
 
+<img width="1470" height="956" alt="Screenshot 2569-05-30 at 23 03 31" src="https://github.com/user-attachments/assets/1dd9fb5b-75f8-46d6-8de6-f578e6bf430f" />
+
 ## Install
 
 ```bash
