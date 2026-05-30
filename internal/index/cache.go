@@ -2,6 +2,7 @@ package index
 
 import (
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -79,7 +80,7 @@ func LoadCached() []Entry {
 		if cached, ok := cf.Files[syntheticPath]; ok {
 			plugins = append(plugins, cached.Plugin)
 		} else {
-			cf.Files[syntheticPath] = cachedEntry{Hash: "embedded", Plugin: p}
+			cf.Files[syntheticPath] = cachedEntry{Hash: embeddedHash(p), Plugin: p}
 			plugins = append(plugins, p)
 			dirty = true
 		}
@@ -138,12 +139,18 @@ func loadCacheFile(path string) cacheFile {
 }
 
 func writeCacheFile(path string, cf cacheFile) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return err
 	}
 	data, err := json.Marshal(cf)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0600)
+}
+
+func embeddedHash(p plugin.Plugin) string {
+    data, _ := json.Marshal(p)
+    sum := sha256.Sum256(data)
+    return fmt.Sprintf("%x", sum)
 }
