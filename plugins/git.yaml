@@ -2,26 +2,207 @@ name: git
 description: Git version control commands
 
 commands:
+  # ── staging ──────────────────────────────────────────────────────────────
   - name: git add
-    description: Add stage to commit
-    template: 'git add "{{.directory}}"'
+    description: Add files to staging
+    template: "git add {{.path}}"
     args:
-      - name: directory
-        description: Directory name
+      - name: path
+        description: File or directory (use . for all)
         type: string
         required: true
+        default: "."
+
+  - name: git restore
+    description: Discard changes in working directory
+    template: "git restore {{.path}}"
+    args:
+      - name: path
+        description: File or directory to restore
+        type: string
+        required: true
+
+  - name: git restore staged
+    description: Unstage a file (keep changes)
+    template: "git restore --staged {{.path}}"
+    args:
+      - name: path
+        description: File to unstage
+        type: string
+        required: true
+
+  # ── commit ───────────────────────────────────────────────────────────────
   - name: git commit
-    description: Commit staged changes with a message
-    template: 'git commit -m "{{.message}}"'
+    description: Commit staged changes
+    template: "git commit -m \"{{.message}}\""
     args:
       - name: message
         description: Commit message
         type: string
         required: true
 
+  - name: git commit amend
+    description: Amend the last commit
+    template: "git commit --amend{{if .no_edit}} --no-edit{{end}}{{if .message}} -m \"{{.message}}\"{{end}}"
+    args:
+      - name: no_edit
+        description: Keep the existing commit message?
+        type: bool
+        required: false
+        default: "true"
+      - name: message
+        description: New commit message (leave empty to keep existing)
+        type: string
+        required: false
+
+  - name: git commit empty
+    description: Create an empty commit (useful for triggering CI)
+    template: "git commit --allow-empty -m \"{{.message}}\""
+    args:
+      - name: message
+        description: Commit message
+        type: string
+        required: true
+        default: "chore: empty commit"
+
+  # ── status / diff ─────────────────────────────────────────────────────────
+  - name: git status
+    description: Show working tree status
+    template: "git status{{if .short}} -s{{end}}"
+    args:
+      - name: short
+        description: Short format?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: git diff
+    description: Show unstaged changes
+    template: "git diff{{if .file}} {{.file}}{{end}}"
+    args:
+      - name: file
+        description: Specific file (leave empty for all)
+        type: string
+        required: false
+
+  - name: git diff staged
+    description: Show staged changes (before commit)
+    template: "git diff --staged{{if .file}} {{.file}}{{end}}"
+    args:
+      - name: file
+        description: Specific file (leave empty for all)
+        type: string
+        required: false
+
+  - name: git diff commits
+    description: Compare two commits or branches
+    template: "git diff {{.from}}{{if .to}}...{{.to}}{{end}}"
+    args:
+      - name: from
+        description: Base commit / branch
+        type: string
+        required: true
+      - name: to
+        description: Target commit / branch (leave empty to compare with working tree)
+        type: string
+        required: false
+
+  # ── log ──────────────────────────────────────────────────────────────────
+  - name: git log
+    description: Show commit history
+    template: "git log {{.format}}"
+    args:
+      - name: format
+        description: Display format
+        type: enum
+        required: false
+        default: "--oneline -20"
+        choices:
+          - "--oneline -20"
+          - "--oneline --graph --all"
+          - "--stat -10"
+          - "-p -5"
+          - "--format='%h %an %ar %s' -20"
+
+  - name: git log file
+    description: Show commit history for a specific file
+    template: "git log --oneline --follow {{.file}}"
+    args:
+      - name: file
+        description: File path
+        type: file
+        required: true
+
+  # ── branch ───────────────────────────────────────────────────────────────
+  - name: git branch
+    description: List all branches
+    template: "git branch{{if .all}} -a{{end}}"
+    args:
+      - name: all
+        description: Show remote branches too?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: git branch create
+    description: Create a new branch
+    template: "git branch {{.name}}"
+    args:
+      - name: name
+        description: Branch name
+        type: string
+        required: true
+
+  - name: git branch delete
+    description: Delete a branch
+    template: "git branch {{if .force}}-D{{else}}-d{{end}} {{.name}}"
+    args:
+      - name: name
+        description: Branch name
+        type: string
+        required: true
+      - name: force
+        description: Force delete (even if unmerged)?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: git branch rename
+    description: Rename current branch
+    template: "git branch -m {{.name}}"
+    args:
+      - name: name
+        description: New branch name
+        type: string
+        required: true
+
+  # ── checkout / switch ─────────────────────────────────────────────────────
+  - name: git checkout
+    description: Switch to an existing branch
+    template: "git checkout {{.branch}}"
+    args:
+      - name: branch
+        description: Branch name
+        type: string
+        required: true
+
+  - name: git checkout new
+    description: Create and switch to a new branch
+    template: "git checkout -b {{.branch}}{{if .from}} {{.from}}{{end}}"
+    args:
+      - name: branch
+        description: New branch name
+        type: string
+        required: true
+      - name: from
+        description: Base branch or commit (leave empty to use current HEAD)
+        type: string
+        required: false
+
+  # ── remote / push / pull ─────────────────────────────────────────────────
   - name: git push
-    description: Push commits to a remote branch
-    template: "git push {{.remote}} {{.branch}}"
+    description: Push commits to remote
+    template: "git push {{.remote}} {{.branch}}{{if .force}} --force-with-lease{{end}}"
     args:
       - name: remote
         description: Remote name
@@ -33,28 +214,323 @@ commands:
         type: string
         required: true
         default: "main"
-
-  - name: git checkout
-    description: Switch or create a branch
-    template: "git checkout {{if .new}}-b {{end}}{{.branch}}"
-    args:
-      - name: branch
-        description: Branch name
-        type: string
-        required: true
-      - name: new
-        description: Create new branch?
+      - name: force
+        description: Force push (with lease)?
         type: bool
         required: false
         default: "false"
 
-  - name: git log
-    description: Show commit history
-    template: "git log {{.flags}}"
+  - name: git push upstream
+    description: Push and set upstream tracking branch
+    template: "git push -u {{.remote}} {{.branch}}"
     args:
-      - name: flags
-        description: Display style
+      - name: remote
+        description: Remote name
+        type: string
+        required: true
+        default: "origin"
+      - name: branch
+        description: Branch name
+        type: string
+        required: true
+
+  - name: git pull
+    description: Pull latest changes from remote
+    template: "git pull {{.remote}} {{.branch}}{{if .rebase}} --rebase{{end}}"
+    args:
+      - name: remote
+        description: Remote name
+        type: string
+        required: true
+        default: "origin"
+      - name: branch
+        description: Branch name
+        type: string
+        required: true
+        default: "main"
+      - name: rebase
+        description: Rebase instead of merge?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: git fetch
+    description: Fetch changes from remote without merging
+    template: "git fetch {{.remote}}{{if .prune}} --prune{{end}}"
+    args:
+      - name: remote
+        description: Remote name (leave empty for all)
+        type: string
+        required: false
+        default: "origin"
+      - name: prune
+        description: Remove deleted remote branches?
+        type: bool
+        required: false
+        default: "true"
+
+  - name: git remote add
+    description: Add a new remote
+    template: "git remote add {{.name}} {{.url}}"
+    args:
+      - name: name
+        description: Remote name
+        type: string
+        required: true
+        default: "origin"
+      - name: url
+        description: Remote URL
+        type: string
+        required: true
+
+  # ── merge / rebase ────────────────────────────────────────────────────────
+  - name: git merge
+    description: Merge a branch into current branch
+    template: "git merge {{.branch}}{{if .no_ff}} --no-ff{{end}}"
+    args:
+      - name: branch
+        description: Branch to merge
+        type: string
+        required: true
+      - name: no_ff
+        description: No fast-forward (always create merge commit)?
+        type: bool
+        required: false
+        default: "false"
+
+  - name: git rebase
+    description: Rebase current branch onto another
+    template: "git rebase {{.branch}}"
+    args:
+      - name: branch
+        description: Branch to rebase onto
+        type: string
+        required: true
+
+  - name: git rebase interactive
+    description: Interactive rebase (squash, reword, edit commits)
+    template: "git rebase -i {{.target}}"
+    args:
+      - name: target
+        description: Target (e.g. HEAD~3 or main)
+        type: string
+        required: true
+        default: "HEAD~3"
+
+  - name: git rebase abort
+    description: Abort an in-progress rebase
+    template: "git rebase --abort"
+    args: []
+
+  - name: git rebase continue
+    description: Continue rebase after resolving conflicts
+    template: "git rebase --continue"
+    args: []
+
+  # ── stash ─────────────────────────────────────────────────────────────────
+  - name: git stash
+    description: Stash current changes
+    template: "git stash{{if .message}} push -m \"{{.message}}\"{{end}}"
+    args:
+      - name: message
+        description: Stash description (optional)
+        type: string
+        required: false
+
+  - name: git stash pop
+    description: Apply and remove the latest stash
+    template: "git stash pop"
+    args: []
+
+  - name: git stash apply
+    description: Apply a stash without removing it
+    template: "git stash apply {{.index}}"
+    args:
+      - name: index
+        description: Stash index (e.g. stash@{0})
+        type: string
+        required: false
+        default: "stash@{0}"
+
+  - name: git stash list
+    description: List all stashes
+    template: "git stash list"
+    args: []
+
+  - name: git stash drop
+    description: Delete a specific stash
+    template: "git stash drop {{.index}}"
+    args:
+      - name: index
+        description: Stash index (e.g. stash@{0})
+        type: string
+        required: false
+        default: "stash@{0}"
+
+  # ── reset ─────────────────────────────────────────────────────────────────
+  - name: git reset
+    description: Undo commits (keep changes in working directory)
+    template: "git reset {{.mode}} {{.target}}"
+    args:
+      - name: target
+        description: Commit to reset to (e.g. HEAD~1)
+        type: string
+        required: true
+        default: "HEAD~1"
+      - name: mode
+        description: Reset mode
         type: enum
         required: false
-        default: "--oneline -20"
-        choices: ["--oneline -20", "--oneline --graph --all", "-p -5", "--stat -10"]
+        default: "--soft"
+        choices: ["--soft", "--mixed", "--hard"]
+
+  - name: git reset file
+    description: Remove a file from staging (keep changes)
+    template: "git reset HEAD {{.file}}"
+    args:
+      - name: file
+        description: File to unstage
+        type: string
+        required: true
+
+  # ── tag ───────────────────────────────────────────────────────────────────
+  - name: git tag
+    description: List all tags
+    template: "git tag{{if .pattern}} -l \"{{.pattern}}\"{{end}}"
+    args:
+      - name: pattern
+        description: Filter pattern (e.g. v1.*)
+        type: string
+        required: false
+
+  - name: git tag create
+    description: Create an annotated tag
+    template: "git tag -a {{.name}} -m \"{{.message}}\""
+    args:
+      - name: name
+        description: Tag name (e.g. v1.0.0)
+        type: string
+        required: true
+      - name: message
+        description: Tag message
+        type: string
+        required: true
+
+  - name: git tag push
+    description: Push a tag to remote
+    template: "git push {{.remote}} {{.tag}}"
+    args:
+      - name: tag
+        description: Tag name
+        type: string
+        required: true
+      - name: remote
+        description: Remote name
+        type: string
+        required: true
+        default: "origin"
+
+  - name: git tag delete
+    description: Delete a tag locally and on remote
+    template: "git tag -d {{.tag}} && git push {{.remote}} :refs/tags/{{.tag}}"
+    args:
+      - name: tag
+        description: Tag name
+        type: string
+        required: true
+      - name: remote
+        description: Remote name
+        type: string
+        required: true
+        default: "origin"
+
+  # ── cherry-pick ───────────────────────────────────────────────────────────
+  - name: git cherry-pick
+    description: Apply a commit from another branch
+    template: "git cherry-pick {{.commit}}"
+    args:
+      - name: commit
+        description: Commit hash
+        type: string
+        required: true
+
+  - name: git cherry-pick abort
+    description: Abort an in-progress cherry-pick
+    template: "git cherry-pick --abort"
+    args: []
+
+  # ── misc ─────────────────────────────────────────────────────────────────
+  - name: git clone
+    description: Clone a repository
+    template: "git clone {{.url}}{{if .dir}} {{.dir}}{{end}}"
+    args:
+      - name: url
+        description: Repository URL
+        type: string
+        required: true
+      - name: dir
+        description: Target directory (leave empty for default)
+        type: string
+        required: false
+
+  - name: git init
+    description: Initialise a new repository
+    template: "git init{{if .dir}} {{.dir}}{{end}}"
+    args:
+      - name: dir
+        description: Directory (leave empty for current)
+        type: string
+        required: false
+
+  - name: git blame
+    description: Show who changed each line of a file
+    template: "git blame {{.file}}"
+    args:
+      - name: file
+        description: File path
+        type: file
+        required: true
+
+  - name: git bisect start
+    description: Start a binary search for a bug
+    template: "git bisect start"
+    args: []
+
+  - name: git bisect good
+    description: Mark current commit as good
+    template: "git bisect good {{.commit}}"
+    args:
+      - name: commit
+        description: Commit hash (leave empty for current)
+        type: string
+        required: false
+
+  - name: git bisect bad
+    description: Mark current commit as bad
+    template: "git bisect bad {{.commit}}"
+    args:
+      - name: commit
+        description: Commit hash (leave empty for current)
+        type: string
+        required: false
+
+  - name: git clean
+    description: Remove untracked files from working directory
+    template: "git clean {{.flags}}"
+    args:
+      - name: flags
+        description: What to remove
+        type: enum
+        required: false
+        default: "-fd"
+        choices: ["-fd", "-fdn (dry run)", "-fdx (include ignored)"]
+
+  - name: git shortlog
+    description: Summarise commit history by author
+    template: "git shortlog -sn{{if .all}} --all{{end}}"
+    args:
+      - name: all
+        description: Include all branches?
+        type: bool
+        required: false
+        default: "false"
