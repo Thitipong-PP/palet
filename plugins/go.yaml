@@ -1,5 +1,6 @@
 name: go
 description: The Go programming language tool
+hidden: true
 
 commands:
   # ── run ───

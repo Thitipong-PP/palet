@@ -11,6 +11,7 @@ type Plugin struct {
 	Description string    `yaml:"description" json:"description"`
 	Commands    []Command `yaml:"commands"    json:"commands"`
 	OS          []string  `yaml:"os"          json:"os"` // e.g. [linux, darwin, windows] — empty means all
+	Hidden      bool      `yaml:"hidden"      json:"hidden"`
 }
 
 type Command struct {

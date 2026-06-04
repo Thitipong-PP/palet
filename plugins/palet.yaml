@@ -1,0 +1,9 @@
+name: palet
+description: Built-in commands for managing palet
+hidden: false
+
+commands:
+  - name: enable plugins
+    description: Manage which plugins are enabled or disabled
+    template: "__internal__enable_plugins"
+    args: []

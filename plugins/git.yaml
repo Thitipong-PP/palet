@@ -1,5 +1,6 @@
 name: git
 description: Git version control commands
+hidden: true
 
 commands:
   # ── staging ──────────────────────────────────────────────────────────────
