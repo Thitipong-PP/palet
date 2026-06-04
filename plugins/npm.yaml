@@ -1,5 +1,6 @@
 name: npm
 description: Node.js package manager commands
+hidden: true
 
 commands:
   # ── init ─────────────────────────────────────────────────────────────────
