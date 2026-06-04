@@ -1,5 +1,6 @@
 name: shell
 description: Common shell commands (cross-platform)
+hidden: false
 
 commands:
   # ── navigate ──────────────────────────────────────────────────────────────

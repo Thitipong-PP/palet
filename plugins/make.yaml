@@ -1,0 +1,306 @@
+name: make
+description: GNU Make build automation and task runner
+hidden: false
+
+commands:
+  # ─────────────────────────────
+  # Basic execution
+  # ─────────────────────────────
+  - name: make
+    description: Run the default target
+    template: 'make{{if .file}} -f {{.file}}{{end}}{{if .directory}} -C {{.directory}}{{end}}'
+    args:
+      - name: file
+        description: Makefile to use
+        type: file
+        required: false
+
+      - name: directory
+        description: Change to directory before running
+        type: dir
+        required: false
+
+  - name: make target
+    description: Run a specific target
+    template: 'make{{if .file}} -f {{.file}}{{end}}{{if .directory}} -C {{.directory}}{{end}} {{.target}}'
+    args:
+      - name: target
+        description: Target to build or execute
+        type: string
+        required: true
+
+      - name: file
+        description: Makefile to use
+        type: file
+        required: false
+
+      - name: directory
+        description: Change to directory before running
+        type: dir
+        required: false
+
+  - name: make targets
+    description: Run multiple targets
+    template: 'make{{if .file}} -f {{.file}}{{end}}{{if .directory}} -C {{.directory}}{{end}} {{.targets}}'
+    args:
+      - name: targets
+        description: Space-separated list of targets
+        type: string
+        required: true
+
+      - name: file
+        description: Makefile to use
+        type: file
+        required: false
+
+      - name: directory
+        description: Change to directory before running
+        type: dir
+        required: false
+
+  # ─────────────────────────────
+  # Variables
+  # ─────────────────────────────
+  - name: make variable
+    description: Run a target with variable overrides
+    template: 'make{{if .file}} -f {{.file}}{{end}} {{.target}} {{.variable}}="{{.value}}"'
+    args:
+      - name: target
+        description: Target to run
+        type: string
+        required: true
+
+      - name: variable
+        description: Variable name
+        type: string
+        required: true
+
+      - name: value
+        description: Variable value
+        type: string
+        required: true
+
+      - name: file
+        description: Makefile to use
+        type: file
+        required: false
+
+  # ─────────────────────────────
+  # Information & inspection
+  # ─────────────────────────────
+  - name: make print-db
+    description: Print make database and rules
+    template: 'make -p{{if .file}} -f {{.file}}{{end}}'
+    args:
+      - name: file
+        description: Makefile to inspect
+        type: file
+        required: false
+
+  - name: make print-directory
+    description: Show working directory information while running
+    template: 'make -w{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Optional target to run
+        type: string
+        required: false
+
+  - name: make list-targets
+    description: Display make database for discovering targets
+    template: 'make -qp{{if .file}} -f {{.file}}{{end}}'
+    args:
+      - name: file
+        description: Makefile to inspect
+        type: file
+        required: false
+
+  - name: make version
+    description: Show make version information
+    template: 'make --version'
+    args: []
+
+  # ─────────────────────────────
+  # Dry run & debugging
+  # ─────────────────────────────
+  - name: make dry-run
+    description: Show commands without executing them
+    template: 'make -n{{if .target}} {{.target}}{{end}}{{if .file}} -f {{.file}}{{end}}'
+    args:
+      - name: target
+        description: Target to simulate
+        type: string
+        required: false
+
+      - name: file
+        description: Makefile to use
+        type: file
+        required: false
+
+  - name: make debug
+    description: Run make with debugging output
+    template: 'make --debug={{.level}}{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: level
+        description: Debugging level
+        type: enum
+        required: false
+        default: basic
+        choices:
+          - basic
+          - verbose
+          - implicit
+          - jobs
+          - makefile
+          - all
+
+      - name: target
+        description: Target to debug
+        type: string
+        required: false
+
+  - name: make trace
+    description: Trace rule execution
+    template: 'make --trace{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Target to trace
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Build control
+  # ─────────────────────────────
+  - name: make touch
+    description: Mark targets as updated without running commands
+    template: 'make -t {{.target}}'
+    args:
+      - name: target
+        description: Target to touch
+        type: string
+        required: true
+
+  - name: make question
+    description: Check whether targets are up to date
+    template: 'make -q{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Target to check
+        type: string
+        required: false
+
+  - name: make rebuild
+    description: Force rebuilding a target
+    template: 'make -B {{.target}}'
+    args:
+      - name: target
+        description: Target to rebuild
+        type: string
+        required: true
+
+  - name: make keep-going
+    description: Continue building after errors
+    template: 'make -k{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Target to build
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Parallel execution
+  # ─────────────────────────────
+  - name: make parallel
+    description: Run jobs in parallel
+    template: 'make -j {{.jobs}}{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: jobs
+        description: Number of parallel jobs
+        type: string
+        required: false
+        default: "4"
+
+      - name: target
+        description: Target to build
+        type: string
+        required: false
+
+  - name: make unlimited-parallel
+    description: Run unlimited parallel jobs
+    template: 'make -j{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Target to build
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Makefile selection
+  # ─────────────────────────────
+  - name: make file
+    description: Run a target using a specific Makefile
+    template: 'make -f {{.file}}{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: file
+        description: Makefile path
+        type: file
+        required: true
+
+      - name: target
+        description: Target to build
+        type: string
+        required: false
+
+  - name: make directory
+    description: Run make in another directory
+    template: 'make -C {{.directory}}{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: directory
+        description: Directory containing the Makefile
+        type: dir
+        required: true
+
+      - name: target
+        description: Target to build
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Environment
+  # ─────────────────────────────
+  - name: make ignore-errors
+    description: Ignore command errors during execution
+    template: 'make -i{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Target to run
+        type: string
+        required: false
+
+  - name: make silent
+    description: Suppress command echo output
+    template: 'make -s{{if .target}} {{.target}}{{end}}'
+    args:
+      - name: target
+        description: Target to run
+        type: string
+        required: false
+
+  - name: make environment
+    description: Export environment variables to make
+    template: 'make {{.target}} {{.variable}}="{{.value}}"'
+    args:
+      - name: target
+        description: Target to run
+        type: string
+        required: true
+
+      - name: variable
+        description: Environment variable name
+        type: string
+        required: true
+
+      - name: value
+        description: Environment variable value
+        type: string
+        required: true

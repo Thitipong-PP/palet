@@ -1,6 +1,7 @@
 name: shell-windows
 description: Windows PowerShell commands
 os: [windows]
+hidden: false
 
 commands:
   # ── navigate ──────────────────────────────────────────────────────────────

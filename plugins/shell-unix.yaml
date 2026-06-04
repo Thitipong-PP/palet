@@ -1,6 +1,7 @@
 name: shell-unix
 description: Unix/Linux shell commands
 os: [linux, darwin]
+hidden: false
 
 commands:
   # ── permissions ───────────────────────────────────────────────────────────
