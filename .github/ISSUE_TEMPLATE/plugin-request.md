@@ -8,11 +8,17 @@ assignees: Thitipong-PP
 ---
 
 ---
-name: New Plugin Request
-about: Request or contribute a new plugin for palet
-title: "feat(plugin): add <tool-name> plugin"
-labels: plugin, enhancement
-assignees: ""
+
+**name:** New Plugin Request
+
+**about:** Request or contribute a new plugin for palet
+
+**title:** "feat(plugin): add <tool-name> plugin"
+
+**labels:** plugin, enhancement
+
+**assignees:** ""
+
 ---
 
 ## Plugin info
