@@ -1,0 +1,327 @@
+name: terraform
+description: Infrastructure as Code provisioning with Terraform
+hidden: true
+
+commands:
+  # ─────────────────────────────
+  # Initialization
+  # ─────────────────────────────
+  - name: terraform init
+    description: Initialize a Terraform working directory
+    template: 'terraform init{{if .upgrade}} -upgrade{{end}}{{if .backend}} -backend={{.backend}}{{end}}{{if .directory}} {{.directory}}{{end}}'
+    args:
+      - name: upgrade
+        description: Upgrade modules and provider plugins
+        type: bool
+        required: false
+
+      - name: backend
+        description: Enable or disable backend initialization
+        type: bool
+        required: false
+
+      - name: directory
+        description: Working directory
+        type: dir
+        required: false
+
+  # ─────────────────────────────
+  # Validation & Formatting
+  # ─────────────────────────────
+  - name: terraform validate
+    description: Validate Terraform configuration files
+    template: 'terraform validate{{if .json}} -json{{end}}'
+    args:
+      - name: json
+        description: Output validation results in JSON format
+        type: bool
+        required: false
+
+  - name: terraform fmt
+    description: Format Terraform configuration files
+    template: 'terraform fmt{{if .recursive}} -recursive{{end}}{{if .check}} -check{{end}}{{if .directory}} {{.directory}}{{end}}'
+    args:
+      - name: recursive
+        description: Process files in subdirectories
+        type: bool
+        required: false
+
+      - name: check
+        description: Check formatting without modifying files
+        type: bool
+        required: false
+
+      - name: directory
+        description: Directory to format
+        type: dir
+        required: false
+
+  # ─────────────────────────────
+  # Planning
+  # ─────────────────────────────
+  - name: terraform plan
+    description: Generate and show an execution plan
+    template: 'terraform plan{{if .out}} -out={{.out}}{{end}}{{if .var_file}} -var-file={{.var_file}}{{end}}{{if .destroy}} -destroy{{end}}'
+    args:
+      - name: out
+        description: Save generated plan to a file
+        type: string
+        required: false
+
+      - name: var_file
+        description: Terraform variable definition file
+        type: file
+        required: false
+
+      - name: destroy
+        description: Create a destroy plan
+        type: bool
+        required: false
+
+  - name: terraform show plan
+    description: Show contents of a saved plan file
+    template: 'terraform show{{if .json}} -json{{end}} {{.plan_file}}'
+    args:
+      - name: plan_file
+        description: Terraform plan file
+        type: file
+        required: true
+
+      - name: json
+        description: Output in JSON format
+        type: bool
+        required: false
+
+  # ─────────────────────────────
+  # Apply & Destroy
+  # ─────────────────────────────
+  - name: terraform apply
+    description: Apply infrastructure changes
+    template: 'terraform apply{{if .auto_approve}} -auto-approve{{end}}{{if .plan_file}} {{.plan_file}}{{end}}{{if .var_file}} -var-file={{.var_file}}{{end}}'
+    args:
+      - name: auto_approve
+        description: Skip interactive approval
+        type: bool
+        required: false
+
+      - name: plan_file
+        description: Saved execution plan file
+        type: file
+        required: false
+
+      - name: var_file
+        description: Terraform variable definition file
+        type: file
+        required: false
+
+  - name: terraform destroy
+    description: Destroy managed infrastructure
+    template: 'terraform destroy{{if .auto_approve}} -auto-approve{{end}}{{if .var_file}} -var-file={{.var_file}}{{end}}'
+    args:
+      - name: auto_approve
+        description: Skip interactive approval
+        type: bool
+        required: false
+
+      - name: var_file
+        description: Terraform variable definition file
+        type: file
+        required: false
+
+  # ─────────────────────────────
+  # State management
+  # ─────────────────────────────
+  - name: terraform state list
+    description: List resources in the Terraform state
+    template: 'terraform state list'
+    args: []
+
+  - name: terraform state show
+    description: Show details of a resource in state
+    template: 'terraform state show {{.resource}}'
+    args:
+      - name: resource
+        description: Resource address
+        type: string
+        required: true
+
+  - name: terraform state rm
+    description: Remove a resource from state
+    template: 'terraform state rm {{.resource}}'
+    args:
+      - name: resource
+        description: Resource address
+        type: string
+        required: true
+
+  - name: terraform state mv
+    description: Move a resource in state
+    template: 'terraform state mv {{.source}} {{.destination}}'
+    args:
+      - name: source
+        description: Source resource address
+        type: string
+        required: true
+
+      - name: destination
+        description: Destination resource address
+        type: string
+        required: true
+
+  - name: terraform state pull
+    description: Pull and display remote state
+    template: 'terraform state pull'
+    args: []
+
+  # ─────────────────────────────
+  # Resource operations
+  # ─────────────────────────────
+  - name: terraform import
+    description: Import existing infrastructure into state
+    template: 'terraform import {{.resource}} {{.id}}'
+    args:
+      - name: resource
+        description: Resource address
+        type: string
+        required: true
+
+      - name: id
+        description: External resource identifier
+        type: string
+        required: true
+
+  - name: terraform taint
+    description: Mark a resource for recreation
+    template: 'terraform taint {{.resource}}'
+    args:
+      - name: resource
+        description: Resource address
+        type: string
+        required: true
+
+  - name: terraform untaint
+    description: Remove taint from a resource
+    template: 'terraform untaint {{.resource}}'
+    args:
+      - name: resource
+        description: Resource address
+        type: string
+        required: true
+
+  # ─────────────────────────────
+  # Workspace management
+  # ─────────────────────────────
+  - name: terraform workspace list
+    description: List Terraform workspaces
+    template: 'terraform workspace list'
+    args: []
+
+  - name: terraform workspace show
+    description: Show current workspace
+    template: 'terraform workspace show'
+    args: []
+
+  - name: terraform workspace new
+    description: Create a new workspace
+    template: 'terraform workspace new {{.name}}'
+    args:
+      - name: name
+        description: Workspace name
+        type: string
+        required: true
+
+  - name: terraform workspace select
+    description: Select an existing workspace
+    template: 'terraform workspace select {{.name}}'
+    args:
+      - name: name
+        description: Workspace name
+        type: string
+        required: true
+
+  - name: terraform workspace delete
+    description: Delete a workspace
+    template: 'terraform workspace delete {{.name}}'
+    args:
+      - name: name
+        description: Workspace name
+        type: string
+        required: true
+
+  # ─────────────────────────────
+  # Output & Console
+  # ─────────────────────────────
+  - name: terraform output
+    description: Show Terraform outputs
+    template: 'terraform output{{if .name}} {{.name}}{{end}}{{if .json}} -json{{end}}'
+    args:
+      - name: name
+        description: Output variable name
+        type: string
+        required: false
+
+      - name: json
+        description: Output in JSON format
+        type: bool
+        required: false
+
+  - name: terraform console
+    description: Start an interactive Terraform console
+    template: 'terraform console'
+    args: []
+
+  # ─────────────────────────────
+  # Graph & Providers
+  # ─────────────────────────────
+  - name: terraform graph
+    description: Generate dependency graph in DOT format
+    template: 'terraform graph'
+    args: []
+
+  - name: terraform providers
+    description: Show provider requirements
+    template: 'terraform providers'
+    args: []
+
+  - name: terraform providers lock
+    description: Update provider lock file
+    template: 'terraform providers lock{{if .platform}} -platform={{.platform}}{{end}}'
+    args:
+      - name: platform
+        description: Target platform (e.g. linux_amd64)
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Testing
+  # ─────────────────────────────
+  - name: terraform test
+    description: Execute Terraform tests
+    template: 'terraform test{{if .filter}} -filter={{.filter}}{{end}}'
+    args:
+      - name: filter
+        description: Test file or pattern filter
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Utility
+  # ─────────────────────────────
+  - name: terraform version
+    description: Show Terraform version information
+    template: 'terraform version'
+    args: []
+
+  - name: terraform force-unlock
+    description: Release a Terraform state lock
+    template: 'terraform force-unlock{{if .force}} -force{{end}} {{.lock_id}}'
+    args:
+      - name: lock_id
+        description: Lock ID to release
+        type: string
+        required: true
+
+      - name: force
+        description: Skip confirmation prompt
+        type: bool
+        required: false
