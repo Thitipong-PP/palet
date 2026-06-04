@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -79,6 +80,7 @@ const (
 	viewList viewState = iota
 	viewForm
 	viewResult
+	viewPluginManager
 )
 
 // group is one plugin's bucket of (filtered) entries, preserving the order in
@@ -92,6 +94,16 @@ type model struct {
 	all    []index.Entry // immutable full command set
 	groups []group       // current filtered results, grouped by plugin
 	flat   []index.Entry // filtered results flattened in display order
+
+	hiddenPlugins map[string]bool // plugins that are currently hidden
+	matchedHidden []string        // hidden plugins that matched the current search
+
+	pluginList      []plugin.Plugin // list of all unique plugins
+	filteredPlugins []plugin.Plugin // filtered plugins
+	pmSearchInput   textinput.Model // plugin manager search
+	pluginCursor    int             // cursor in plugin manager
+
+	userSettings map[string]bool // user's saved plugin preferences
 
 	state viewState
 
@@ -122,6 +134,13 @@ type model struct {
 // Start opens the Bubble Tea program and, once it closes, runs the built
 // command if the user chose to execute it.
 func Start(entries []index.Entry) error {
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Plugin.Name == entries[j].Plugin.Name {
+			return entries[i].Command.Name < entries[j].Command.Name
+		}
+		return entries[i].Plugin.Name < entries[j].Plugin.Name
+	})
+
 	si := textinput.New()
 	si.Prompt = "⌕  "
 	si.Placeholder = "Search commands…"
@@ -131,10 +150,46 @@ func Start(entries []index.Entry) error {
 	si.Cursor.Style = lipgloss.NewStyle().Foreground(cBrand)
 	si.Focus()
 
+	pmsi := textinput.New()
+	pmsi.Prompt = "⌕  "
+	pmsi.Placeholder = "Search plugins…"
+	pmsi.PromptStyle = lipgloss.NewStyle().Foreground(cBrand)
+	pmsi.PlaceholderStyle = styleDim
+	pmsi.TextStyle = lipgloss.NewStyle().Foreground(cText)
+	pmsi.Cursor.Style = lipgloss.NewStyle().Foreground(cBrand)
+
+	hp := make(map[string]bool)
+	pluginSet := make(map[string]bool)
+	var pList []plugin.Plugin
+
+	userSettings := loadSettings()
+
+	for _, e := range entries {
+		if val, exists := userSettings[e.Plugin.Name]; exists {
+			if val {
+				hp[e.Plugin.Name] = true
+			}
+		} else if e.Plugin.Hidden {
+			hp[e.Plugin.Name] = true
+		}
+		if !pluginSet[e.Plugin.Name] {
+			pluginSet[e.Plugin.Name] = true
+			if e.Plugin.Name != "palet" {
+				pList = append(pList, e.Plugin)
+			}
+		}
+	}
+	sort.Slice(pList, func(i, j int) bool { return pList[i].Name < pList[j].Name })
+
 	m := model{
-		all:         entries,
-		searchInput: si,
-		state:       viewList,
+		all:             entries,
+		hiddenPlugins:   hp,
+		pluginList:      pList,
+		filteredPlugins: pList,
+		pmSearchInput:   pmsi,
+		userSettings:    userSettings,
+		searchInput:     si,
+		state:           viewList,
 	}
 	m.applySearch("")
 
@@ -167,6 +222,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		m.searchInput.Width = max(10, m.width-16)
+		m.pmSearchInput.Width = max(10, m.width-16)
 		for i := range m.inputs {
 			m.inputs[i].Width = max(10, m.width-14)
 		}
@@ -181,6 +237,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateForm(msg)
 		case viewResult:
 			return m.updateResult(msg)
+		case viewPluginManager:
+			return m.updatePluginManager(msg)
 		}
 	}
 
@@ -194,6 +252,8 @@ func (m model) View() string {
 		return m.viewForm()
 	case viewResult:
 		return m.viewResult()
+	case viewPluginManager:
+		return m.viewPluginManager()
 	default:
 		return m.viewList()
 	}
@@ -233,7 +293,16 @@ func (m model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "enter":
 		if len(m.flat) > 0 {
-			m.openForm(m.flat[m.cursor])
+			selected := m.flat[m.cursor]
+			if selected.Plugin.Name == "palet" && selected.Command.Name == "enable plugins" {
+				m.pluginCursor = 0
+				m.pmSearchInput.SetValue("")
+				m.pmSearchInput.Focus()
+				m.applyPluginSearch("")
+				m.state = viewPluginManager
+				return m, nil
+			}
+			m.openForm(selected)
 		}
 		return m, nil
 	}
@@ -251,7 +320,23 @@ func (m model) updateList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // applySearch refilters the entries and rebuilds the grouped + flat views.
 func (m *model) applySearch(query string) {
 	results := search.Query(m.all, query)
-	m.groups = buildGroups(results)
+
+	var active []index.Entry
+	m.matchedHidden = nil
+	seenHidden := make(map[string]bool)
+
+	for _, e := range results {
+		if m.hiddenPlugins[e.Plugin.Name] {
+			if !seenHidden[e.Plugin.Name] {
+				seenHidden[e.Plugin.Name] = true
+				m.matchedHidden = append(m.matchedHidden, e.Plugin.Name)
+			}
+		} else {
+			active = append(active, e)
+		}
+	}
+
+	m.groups = buildGroups(active)
 
 	m.flat = m.flat[:0]
 	for _, g := range m.groups {
@@ -306,7 +391,7 @@ func (m model) viewList() string {
 	b.WriteString(m.logoIcon() + "\n\n")
 	b.WriteString(m.searchView() + "\n\n")
 
-	if len(m.flat) == 0 {
+	if len(m.flat) == 0 && len(m.matchedHidden) == 0 {
 		b.WriteString("  " + styleDim.Render("✗ no commands match your search") + "\n")
 		b.WriteString("\n" + renderHints([]keyHint{{"esc", "clear"}, {"q", "quit"}}))
 		return b.String()
@@ -356,6 +441,17 @@ func (m model) listRows() (rows []string, cursorRow int) {
 			flatIdx++
 		}
 	}
+
+	for _, hp := range m.matchedHidden {
+		if len(rows) > 0 {
+			rows = append(rows, "")
+		}
+		header := "  " + styleGroupBar.Render("▎") + " " +
+			styleMuted.Render(strings.ToUpper(hp)) + "  " +
+			styleCount.Render("hidden (enable via palet)")
+		rows = append(rows, header)
+	}
+
 	return rows, cursorRow
 }
 
@@ -718,6 +814,8 @@ func (m model) forward(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(m.inputs) > 0 {
 			m.inputs[m.focus], cmd = m.inputs[m.focus].Update(msg)
 		}
+	case viewPluginManager:
+		m.pmSearchInput, cmd = m.pmSearchInput.Update(msg)
 	}
 	return m, cmd
 }
@@ -792,4 +890,133 @@ func cwdLabel() string {
 		return "~" + wd[len(home):]
 	}
 	return filepath.Clean(wd)
+}
+
+// ---------------------------------------------------------------------------
+// Plugin Manager view
+// ---------------------------------------------------------------------------
+
+func (m *model) updatePluginManager(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+
+	case "esc":
+		m.state = viewList
+		m.applySearch(m.searchInput.Value())
+		return m, nil
+
+	case "up", "ctrl+p":
+		m.pluginCursor--
+		if m.pluginCursor < 0 {
+			m.pluginCursor = 0
+		}
+		return m, nil
+
+	case "down", "ctrl+n":
+		m.pluginCursor++
+		if m.pluginCursor >= len(m.filteredPlugins) {
+			m.pluginCursor = len(m.filteredPlugins) - 1
+		}
+		return m, nil
+
+	case "enter":
+		if len(m.filteredPlugins) > 0 {
+			name := m.filteredPlugins[m.pluginCursor].Name
+			if m.hiddenPlugins[name] {
+				delete(m.hiddenPlugins, name)
+				m.userSettings[name] = false
+			} else {
+				m.hiddenPlugins[name] = true
+				m.userSettings[name] = true
+			}
+			_ = saveSettings(m.userSettings)
+		}
+		return m, nil
+	}
+
+	prev := m.pmSearchInput.Value()
+	var cmd tea.Cmd
+	m.pmSearchInput, cmd = m.pmSearchInput.Update(msg)
+	if m.pmSearchInput.Value() != prev {
+		m.applyPluginSearch(m.pmSearchInput.Value())
+	}
+	return m, cmd
+}
+
+func (m *model) applyPluginSearch(query string) {
+	q := strings.ToLower(strings.TrimSpace(query))
+	if q == "" {
+		m.filteredPlugins = m.pluginList
+	} else {
+		var filtered []plugin.Plugin
+		for _, p := range m.pluginList {
+			if strings.Contains(strings.ToLower(p.Name), q) || strings.Contains(strings.ToLower(p.Description), q) {
+				filtered = append(filtered, p)
+			}
+		}
+		m.filteredPlugins = filtered
+	}
+	if m.pluginCursor >= len(m.filteredPlugins) {
+		m.pluginCursor = len(m.filteredPlugins) - 1
+	}
+	if m.pluginCursor < 0 {
+		m.pluginCursor = 0
+	}
+}
+
+func (m model) viewPluginManager() string {
+	var b strings.Builder
+	b.WriteString("\n" + m.topBar("") + "\n\n")
+	b.WriteString(m.logoIcon() + "\n\n")
+
+	b.WriteString("  " + stylePlugin.Render("PLUGIN MANAGER") + "\n")
+
+	// Search box
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(cBrand).
+		Padding(0, 1).
+		MarginLeft(2).
+		Width(max(12, m.w()-8))
+	b.WriteString(box.Render(m.pmSearchInput.View()) + "\n\n")
+
+	if len(m.filteredPlugins) == 0 {
+		b.WriteString("  " + styleDim.Render("✗ no plugins match your search") + "\n")
+	}
+
+	for i, p := range m.filteredPlugins {
+		selected := m.pluginCursor == i
+
+		var badge string
+		if m.hiddenPlugins[p.Name] {
+			badge = lipgloss.NewStyle().Foreground(cMuted).Background(cFainter).Padding(0, 1).Render(" OFF ")
+		} else {
+			badge = lipgloss.NewStyle().Foreground(lipgloss.Color("232")).Background(cBrand2).Padding(0, 1).Bold(true).Render("  ON ")
+		}
+
+		nameW := 12
+		name := pad(p.Name, nameW)
+		desc := p.Description
+
+		if selected {
+			inner := styleSelName.Background(cSelBg).Render(" " + name) + " " + badge
+			if desc != "" {
+				inner += lipgloss.NewStyle().Foreground(cSubtle).Background(cSelBg).Render("  " + desc)
+			}
+			row := lipgloss.NewStyle().Background(cSelBg).Width(max(4, m.w()-5)).Render(inner)
+			b.WriteString(styleSelBar.Render("▌") + row + "\n")
+		} else {
+			line := "   " + styleCmd.Render(name) + " " + badge
+			if desc != "" {
+				line += "  " + styleDesc.Render(desc)
+			}
+			b.WriteString(line + "\n")
+		}
+	}
+
+	b.WriteString("\n" + renderHints([]keyHint{
+		{"↑/↓", "navigate"}, {"enter", "toggle"}, {"esc", "back"},
+	}))
+	return b.String()
 }
