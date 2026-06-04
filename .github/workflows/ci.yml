@@ -8,13 +8,14 @@ on:
 
 jobs:
   test:
-    name: Test on ${{ matrix.os }}
+    name: Test [${{ matrix.os }}] - ${{ matrix.module }}
     runs-on: ${{ matrix.os }}
     
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        module: [plugin, index, search, validator, executor]
 
     steps:
       - name: Checkout code
@@ -26,5 +27,5 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
-      - name: Run Core Engine Tests
-        run: go test ./... -v
+      - name: Run Module Tests
+        run: go test ./internal/${{ matrix.module }}/... -v
