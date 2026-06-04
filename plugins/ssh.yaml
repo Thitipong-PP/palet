@@ -1,0 +1,367 @@
+name: ssh
+description: Secure Shell (SSH) client and file transfer commands
+hidden: false
+
+commands:
+  # ─────────────────────────────
+  # SSH connections
+  # ─────────────────────────────
+  - name: ssh connect
+    description: Connect to a remote host via SSH
+    template: 'ssh{{if .port}} -p {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}}{{if .user}} {{.user}}@{{end}}{{.host}}'
+    args:
+      - name: host
+        description: Remote host or IP address
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  - name: ssh command
+    description: Execute a command on a remote host
+    template: 'ssh{{if .port}} -p {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}}{{if .user}} {{.user}}@{{end}}{{.host}} "{{.command}}"'
+    args:
+      - name: host
+        description: Remote host or IP address
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: command
+        description: Command to execute remotely
+        type: string
+        required: true
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  - name: ssh tunnel local
+    description: Create a local port forwarding tunnel
+    template: 'ssh -L {{.local_port}}:{{.remote_host}}:{{.remote_port}}{{if .port}} -p {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{if .user}}{{.user}}@{{end}}{{.host}}'
+    args:
+      - name: local_port
+        description: Local listening port
+        type: string
+        required: true
+
+      - name: remote_host
+        description: Remote destination host
+        type: string
+        required: true
+
+      - name: remote_port
+        description: Remote destination port
+        type: string
+        required: true
+
+      - name: host
+        description: SSH server host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  - name: ssh tunnel remote
+    description: Create a remote port forwarding tunnel
+    template: 'ssh -R {{.remote_port}}:{{.local_host}}:{{.local_port}}{{if .port}} -p {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{if .user}}{{.user}}@{{end}}{{.host}}'
+    args:
+      - name: remote_port
+        description: Remote listening port
+        type: string
+        required: true
+
+      - name: local_host
+        description: Local destination host
+        type: string
+        required: true
+
+      - name: local_port
+        description: Local destination port
+        type: string
+        required: true
+
+      - name: host
+        description: SSH server host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  - name: ssh tunnel dynamic
+    description: Create a SOCKS proxy tunnel
+    template: 'ssh -D {{.local_port}}{{if .port}} -p {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{if .user}}{{.user}}@{{end}}{{.host}}'
+    args:
+      - name: local_port
+        description: Local SOCKS proxy port
+        type: string
+        required: true
+
+      - name: host
+        description: SSH server host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  # ─────────────────────────────
+  # SCP file transfer
+  # ─────────────────────────────
+  - name: scp upload
+    description: Upload a file to a remote host
+    template: 'scp{{if .port}} -P {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{.source}} {{if .user}}{{.user}}@{{end}}{{.host}}:{{.destination}}'
+    args:
+      - name: source
+        description: Local file to upload
+        type: file
+        required: true
+
+      - name: destination
+        description: Remote destination path
+        type: string
+        required: true
+
+      - name: host
+        description: Remote host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  - name: scp download
+    description: Download a file from a remote host
+    template: 'scp{{if .port}} -P {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{if .user}}{{.user}}@{{end}}{{.host}}:{{.source}} {{.destination}}'
+    args:
+      - name: source
+        description: Remote file path
+        type: string
+        required: true
+
+      - name: destination
+        description: Local destination path
+        type: string
+        required: true
+
+      - name: host
+        description: Remote host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  - name: scp upload dir
+    description: Upload a directory recursively
+    template: 'scp -r{{if .port}} -P {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{.source}} {{if .user}}{{.user}}@{{end}}{{.host}}:{{.destination}}'
+    args:
+      - name: source
+        description: Local directory to upload
+        type: dir
+        required: true
+
+      - name: destination
+        description: Remote destination directory
+        type: string
+        required: true
+
+      - name: host
+        description: Remote host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Private key file
+        type: file
+        required: false
+
+  # ─────────────────────────────
+  # SSH key management
+  # ─────────────────────────────
+  - name: ssh-keygen generate
+    description: Generate a new SSH key pair
+    template: 'ssh-keygen -t {{.type}}{{if .bits}} -b {{.bits}}{{end}}{{if .comment}} -C "{{.comment}}"{{end}}{{if .output}} -f {{.output}}{{end}}'
+    args:
+      - name: type
+        description: Key algorithm
+        type: enum
+        required: false
+        default: ed25519
+        choices:
+          - ed25519
+          - rsa
+          - ecdsa
+
+      - name: bits
+        description: Key size (for RSA/ECDSA)
+        type: string
+        required: false
+
+      - name: comment
+        description: Key comment
+        type: string
+        required: false
+
+      - name: output
+        description: Output key file
+        type: string
+        required: false
+
+  - name: ssh-keygen fingerprint
+    description: Show SSH key fingerprint
+    template: 'ssh-keygen -lf {{.key_file}}'
+    args:
+      - name: key_file
+        description: Public key file
+        type: file
+        required: true
+
+  - name: ssh-copy-id
+    description: Install public key on remote host
+    template: 'ssh-copy-id{{if .port}} -p {{.port}}{{end}}{{if .identity_file}} -i {{.identity_file}}{{end}} {{if .user}}{{.user}}@{{end}}{{.host}}'
+    args:
+      - name: host
+        description: Remote host
+        type: string
+        required: true
+
+      - name: user
+        description: SSH username
+        type: string
+        required: false
+
+      - name: port
+        description: SSH port
+        type: string
+        required: false
+        default: "22"
+
+      - name: identity_file
+        description: Public key file to install
+        type: file
+        required: false
+
+  # ─────────────────────────────
+  # SSH config
+  # ─────────────────────────────
+  - name: ssh config test
+    description: Test SSH configuration and connection settings
+    template: 'ssh -G {{.host}}'
+    args:
+      - name: host
+        description: SSH host alias or hostname
+        type: string
+        required: true
+
+  - name: ssh config check
+    description: Validate SSH configuration file
+    template: 'ssh -T{{if .config}} -F {{.config}}{{end}} localhost'
+    args:
+      - name: config
+        description: SSH config file
+        type: file
+        required: false
