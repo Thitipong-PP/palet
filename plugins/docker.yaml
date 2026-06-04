@@ -1,0 +1,488 @@
+name: docker
+description: Docker container management commands
+hidden: true
+
+commands:
+  # ─────────────────────────────────────────────
+  # Image Management
+  # ─────────────────────────────────────────────
+
+  - name: build
+    description: Build an image from a Dockerfile
+    template: 'docker build{{if .tag}} -t {{.tag}}{{end}}{{if .dockerfile}} -f {{.dockerfile}}{{end}} {{.context}}'
+    args:
+      - name: context
+        description: Build context directory
+        type: dir
+        required: true
+      - name: tag
+        description: Image name and tag
+        type: string
+        required: false
+      - name: dockerfile
+        description: Path to Dockerfile
+        type: file
+        required: false
+        default: Dockerfile
+
+  - name: images
+    description: List local images
+    template: 'docker images'
+    args: []
+
+  - name: pull
+    description: Pull an image from a registry
+    template: 'docker pull {{.image}}'
+    args:
+      - name: image
+        description: Image name to pull
+        type: string
+        required: true
+
+  - name: push
+    description: Push an image to a registry
+    template: 'docker push {{.image}}'
+    args:
+      - name: image
+        description: Image name to push
+        type: string
+        required: true
+
+  - name: tag
+    description: Create a tag for an image
+    template: 'docker tag {{.source}} {{.target}}'
+    args:
+      - name: source
+        description: Source image
+        type: string
+        required: true
+      - name: target
+        description: Target image tag
+        type: string
+        required: true
+
+  - name: rmi
+    description: Remove one or more images
+    template: 'docker rmi {{.image}}'
+    args:
+      - name: image
+        description: Image name or ID
+        type: string
+        required: true
+
+  - name: image inspect
+    description: Display detailed image information
+    template: 'docker image inspect {{.image}}'
+    args:
+      - name: image
+        description: Image name or ID
+        type: string
+        required: true
+
+  - name: image prune
+    description: Remove unused images
+    template: 'docker image prune{{if .force}} -f{{end}}'
+    args:
+      - name: force
+        description: Do not prompt for confirmation
+        type: bool
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Container Management
+  # ─────────────────────────────────────────────
+
+  - name: run
+    description: Create and run a container
+    template: 'docker run{{if .detach}} -d{{end}}{{if .interactive}} -it{{end}}{{if .name}} --name {{.name}}{{end}}{{if .port}} -p {{.port}}{{end}}{{if .volume}} -v {{.volume}}{{end}}{{if .env}} -e {{.env}}{{end}} {{.image}}{{if .command}} {{.command}}{{end}}'
+    args:
+      - name: image
+        description: Image to run
+        type: string
+        required: true
+      - name: command
+        description: Command to execute in container
+        type: string
+        required: false
+      - name: name
+        description: Container name
+        type: string
+        required: false
+      - name: port
+        description: Port mapping host:container
+        type: string
+        required: false
+      - name: volume
+        description: Volume mapping host:container
+        type: string
+        required: false
+      - name: env
+        description: Environment variable KEY=VALUE
+        type: string
+        required: false
+      - name: detach
+        description: Run container in background
+        type: bool
+        required: false
+      - name: interactive
+        description: Run interactively with TTY
+        type: bool
+        required: false
+
+  - name: ps
+    description: List running containers
+    template: 'docker ps{{if .all}} -a{{end}}'
+    args:
+      - name: all
+        description: Show all containers
+        type: bool
+        required: false
+
+  - name: start
+    description: Start a stopped container
+    template: 'docker start {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+
+  - name: stop
+    description: Stop a running container
+    template: 'docker stop {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+
+  - name: restart
+    description: Restart a container
+    template: 'docker restart {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+
+  - name: kill
+    description: Kill a running container
+    template: 'docker kill {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+
+  - name: rm
+    description: Remove a container
+    template: 'docker rm{{if .force}} -f{{end}} {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+      - name: force
+        description: Force removal of running container
+        type: bool
+        required: false
+
+  - name: inspect
+    description: Display detailed container information
+    template: 'docker inspect {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+
+  - name: logs
+    description: Fetch container logs
+    template: 'docker logs{{if .follow}} -f{{end}}{{if .tail}} --tail {{.tail}}{{end}} {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+      - name: follow
+        description: Follow log output
+        type: bool
+        required: false
+      - name: tail
+        description: Number of log lines to show
+        type: string
+        required: false
+        default: "100"
+
+  - name: exec
+    description: Execute a command in a running container
+    template: 'docker exec{{if .interactive}} -it{{end}} {{.container}} {{.command}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+      - name: command
+        description: Command to execute
+        type: string
+        required: true
+      - name: interactive
+        description: Allocate TTY and keep stdin open
+        type: bool
+        required: false
+
+  - name: cp
+    description: Copy files between container and host
+    template: 'docker cp {{.source}} {{.destination}}'
+    args:
+      - name: source
+        description: Source path
+        type: string
+        required: true
+      - name: destination
+        description: Destination path
+        type: string
+        required: true
+
+  - name: stats
+    description: Display live container resource usage
+    template: 'docker stats{{if .container}} {{.container}}{{end}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: false
+
+  - name: top
+    description: Display running processes in a container
+    template: 'docker top {{.container}}'
+    args:
+      - name: container
+        description: Container name or ID
+        type: string
+        required: true
+
+  # ─────────────────────────────────────────────
+  # Network Management
+  # ─────────────────────────────────────────────
+
+  - name: network ls
+    description: List networks
+    template: 'docker network ls'
+    args: []
+
+  - name: network create
+    description: Create a network
+    template: 'docker network create{{if .driver}} -d {{.driver}}{{end}} {{.name}}'
+    args:
+      - name: name
+        description: Network name
+        type: string
+        required: true
+      - name: driver
+        description: Network driver
+        type: enum
+        required: false
+        default: bridge
+        choices:
+          - bridge
+          - overlay
+          - host
+          - macvlan
+          - none
+
+  - name: network inspect
+    description: Display network details
+    template: 'docker network inspect {{.network}}'
+    args:
+      - name: network
+        description: Network name or ID
+        type: string
+        required: true
+
+  - name: network rm
+    description: Remove a network
+    template: 'docker network rm {{.network}}'
+    args:
+      - name: network
+        description: Network name or ID
+        type: string
+        required: true
+
+  # ─────────────────────────────────────────────
+  # Volume Management
+  # ─────────────────────────────────────────────
+
+  - name: volume ls
+    description: List volumes
+    template: 'docker volume ls'
+    args: []
+
+  - name: volume create
+    description: Create a volume
+    template: 'docker volume create {{.name}}'
+    args:
+      - name: name
+        description: Volume name
+        type: string
+        required: true
+
+  - name: volume inspect
+    description: Display volume details
+    template: 'docker volume inspect {{.volume}}'
+    args:
+      - name: volume
+        description: Volume name
+        type: string
+        required: true
+
+  - name: volume rm
+    description: Remove a volume
+    template: 'docker volume rm {{.volume}}'
+    args:
+      - name: volume
+        description: Volume name
+        type: string
+        required: true
+
+  - name: volume prune
+    description: Remove unused volumes
+    template: 'docker volume prune{{if .force}} -f{{end}}'
+    args:
+      - name: force
+        description: Do not prompt for confirmation
+        type: bool
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Registry & Authentication
+  # ─────────────────────────────────────────────
+
+  - name: login
+    description: Log in to a Docker registry
+    template: 'docker login{{if .registry}} {{.registry}}{{end}}'
+    args:
+      - name: registry
+        description: Registry URL
+        type: string
+        required: false
+
+  - name: logout
+    description: Log out from a Docker registry
+    template: 'docker logout{{if .registry}} {{.registry}}{{end}}'
+    args:
+      - name: registry
+        description: Registry URL
+        type: string
+        required: false
+
+  - name: search
+    description: Search Docker Hub for images
+    template: 'docker search {{.term}}'
+    args:
+      - name: term
+        description: Search keyword
+        type: string
+        required: true
+
+  # ─────────────────────────────────────────────
+  # System Management
+  # ─────────────────────────────────────────────
+
+  - name: info
+    description: Display Docker system information
+    template: 'docker info'
+    args: []
+
+  - name: version
+    description: Show Docker version information
+    template: 'docker version'
+    args: []
+
+  - name: system df
+    description: Show Docker disk usage
+    template: 'docker system df'
+    args: []
+
+  - name: system prune
+    description: Remove unused Docker data
+    template: 'docker system prune{{if .all}} -a{{end}}{{if .volumes}} --volumes{{end}}{{if .force}} -f{{end}}'
+    args:
+      - name: all
+        description: Remove all unused images
+        type: bool
+        required: false
+      - name: volumes
+        description: Remove unused volumes
+        type: bool
+        required: false
+      - name: force
+        description: Do not prompt for confirmation
+        type: bool
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Docker Compose
+  # ─────────────────────────────────────────────
+
+  - name: compose up
+    description: Create and start services
+    template: 'docker compose up{{if .detach}} -d{{end}}{{if .build}} --build{{end}}'
+    args:
+      - name: detach
+        description: Run services in background
+        type: bool
+        required: false
+      - name: build
+        description: Build images before starting
+        type: bool
+        required: false
+
+  - name: compose down
+    description: Stop and remove services
+    template: 'docker compose down{{if .volumes}} -v{{end}}'
+    args:
+      - name: volumes
+        description: Remove named volumes
+        type: bool
+        required: false
+
+  - name: compose ps
+    description: List compose services
+    template: 'docker compose ps'
+    args: []
+
+  - name: compose logs
+    description: View compose logs
+    template: 'docker compose logs{{if .follow}} -f{{end}}{{if .service}} {{.service}}{{end}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: false
+      - name: follow
+        description: Follow log output
+        type: bool
+        required: false
+
+  - name: compose build
+    description: Build compose services
+    template: 'docker compose build{{if .service}} {{.service}}{{end}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: false
+
+  - name: compose exec
+    description: Execute command in a compose service
+    template: 'docker compose exec {{.service}} {{.command}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: true
+      - name: command
+        description: Command to execute
+        type: string
+        required: true
