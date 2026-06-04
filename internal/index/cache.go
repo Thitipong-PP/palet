@@ -32,6 +32,7 @@ func LoadCached() []Entry {
 	cf := loadCacheFile(path)
 
 	var plugins []plugin.Plugin
+	seen := make(map[string]bool)
 	dirty := false
 
 	// Load from filesystem directories
@@ -54,7 +55,10 @@ func LoadCached() []Entry {
 
 			// cache hit — reuse without parsing
 			if cached, ok := cf.Files[absPath]; ok && cached.Hash == hash {
-				plugins = append(plugins, cached.Plugin)
+				if !seen[cached.Plugin.Name] {
+					seen[cached.Plugin.Name] = true
+					plugins = append(plugins, cached.Plugin)
+				}
 				continue
 			}
 
@@ -64,7 +68,10 @@ func LoadCached() []Entry {
 				continue
 			}
 			cf.Files[absPath] = cachedEntry{Hash: hash, Plugin: p}
-			plugins = append(plugins, p)
+			if !seen[p.Name] {
+				seen[p.Name] = true
+				plugins = append(plugins, p)
+			}
 			dirty = true
 		}
 	}
@@ -76,10 +83,16 @@ func LoadCached() []Entry {
 		hash := embeddedHash(p)
 
 		if cached, ok := cf.Files[syntheticPath]; ok && cached.Hash == hash {
-			plugins = append(plugins, cached.Plugin)
+			if !seen[cached.Plugin.Name] {
+				seen[cached.Plugin.Name] = true
+				plugins = append(plugins, cached.Plugin)
+			}
 		} else {
 			cf.Files[syntheticPath] = cachedEntry{Hash: hash, Plugin: p}
-			plugins = append(plugins, p)
+			if !seen[p.Name] {
+				seen[p.Name] = true
+				plugins = append(plugins, p)
+			}
 			dirty = true
 		}
 	}
