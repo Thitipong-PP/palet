@@ -8,7 +8,7 @@ Write a complete palet plugin YAML file for **[TOOL NAME]**.
 ```yaml
 name: string                  # plugin name (lowercase)
 description: string           # one-line description
-hidden: bool                  # loaded by default
+hidden: bool                  # true if it a special command
 
 commands:
   - name: string              # e.g. "go run"
