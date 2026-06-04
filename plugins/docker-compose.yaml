@@ -1,0 +1,353 @@
+name: docker-compose
+description: Docker Compose application lifecycle management
+hidden: true
+
+commands:
+  # ─────────────────────────────
+  # Project lifecycle
+  # ─────────────────────────────
+  - name: compose up
+    description: Create and start services
+    template: 'docker-compose up{{if .detach}} -d{{end}}{{if .build}} --build{{end}}{{if .remove_orphans}} --remove-orphans{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: detach
+        description: Run containers in background
+        type: bool
+        required: false
+
+      - name: build
+        description: Build images before starting containers
+        type: bool
+        required: false
+
+      - name: remove_orphans
+        description: Remove containers for services not defined in compose file
+        type: bool
+        required: false
+
+      - name: services
+        description: Space-separated list of services to start
+        type: string
+        required: false
+
+  - name: compose down
+    description: Stop and remove services, networks, and containers
+    template: 'docker-compose down{{if .volumes}} -v{{end}}{{if .remove_images}} --rmi {{.remove_images}}{{end}}{{if .remove_orphans}} --remove-orphans{{end}}'
+    args:
+      - name: volumes
+        description: Remove named volumes
+        type: bool
+        required: false
+
+      - name: remove_images
+        description: Remove images
+        type: enum
+        required: false
+        choices:
+          - all
+          - local
+
+      - name: remove_orphans
+        description: Remove orphan containers
+        type: bool
+        required: false
+
+  - name: compose start
+    description: Start existing services
+    template: 'docker-compose start{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: services
+        description: Space-separated list of services to start
+        type: string
+        required: false
+
+  - name: compose stop
+    description: Stop running services
+    template: 'docker-compose stop{{if .timeout}} -t {{.timeout}}{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: timeout
+        description: Shutdown timeout in seconds
+        type: string
+        required: false
+        default: "10"
+
+      - name: services
+        description: Space-separated list of services to stop
+        type: string
+        required: false
+
+  - name: compose restart
+    description: Restart services
+    template: 'docker-compose restart{{if .timeout}} -t {{.timeout}}{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: timeout
+        description: Shutdown timeout in seconds
+        type: string
+        required: false
+        default: "10"
+
+      - name: services
+        description: Space-separated list of services to restart
+        type: string
+        required: false
+
+  - name: compose pause
+    description: Pause services
+    template: 'docker-compose pause{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: services
+        description: Space-separated list of services to pause
+        type: string
+        required: false
+
+  - name: compose unpause
+    description: Unpause services
+    template: 'docker-compose unpause{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: services
+        description: Space-separated list of services to unpause
+        type: string
+        required: false
+
+  # ─────────────────────────────
+  # Build & images
+  # ─────────────────────────────
+  - name: compose build
+    description: Build or rebuild services
+    template: 'docker-compose build{{if .no_cache}} --no-cache{{end}}{{if .pull}} --pull{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: no_cache
+        description: Do not use cache when building
+        type: bool
+        required: false
+
+      - name: pull
+        description: Always attempt to pull newer base images
+        type: bool
+        required: false
+
+      - name: services
+        description: Space-separated list of services to build
+        type: string
+        required: false
+
+  - name: compose pull
+    description: Pull service images
+    template: 'docker-compose pull{{if .ignore_failures}} --ignore-pull-failures{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: ignore_failures
+        description: Continue even if some images fail to pull
+        type: bool
+        required: false
+
+      - name: services
+        description: Space-separated list of services to pull
+        type: string
+        required: false
+
+  - name: compose push
+    description: Push service images
+    template: 'docker-compose push{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: services
+        description: Space-separated list of services to push
+        type: string
+        required: false
+
+  - name: compose images
+    description: List images used by services
+    template: 'docker-compose images'
+    args: []
+
+  # ─────────────────────────────
+  # Logs & monitoring
+  # ─────────────────────────────
+  - name: compose logs
+    description: View service logs
+    template: 'docker-compose logs{{if .follow}} -f{{end}}{{if .tail}} --tail {{.tail}}{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: follow
+        description: Follow log output
+        type: bool
+        required: false
+
+      - name: tail
+        description: Number of lines to show from the end of logs
+        type: string
+        required: false
+        default: "100"
+
+      - name: services
+        description: Space-separated list of services
+        type: string
+        required: false
+
+  - name: compose ps
+    description: List containers
+    template: 'docker-compose ps{{if .all}} -a{{end}}'
+    args:
+      - name: all
+        description: Show all containers including stopped ones
+        type: bool
+        required: false
+
+  - name: compose top
+    description: Display running processes
+    template: 'docker-compose top{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: services
+        description: Space-separated list of services
+        type: string
+        required: false
+
+  - name: compose events
+    description: Receive real-time events
+    template: 'docker-compose events'
+    args: []
+
+  # ─────────────────────────────
+  # Service operations
+  # ─────────────────────────────
+  - name: compose exec
+    description: Execute a command in a running container
+    template: 'docker-compose exec{{if .user}} -u {{.user}}{{end}} {{.service}} {{.command}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: true
+
+      - name: command
+        description: Command to execute
+        type: string
+        required: true
+
+      - name: user
+        description: User to run command as
+        type: string
+        required: false
+
+  - name: compose run
+    description: Run a one-off command
+    template: 'docker-compose run{{if .rm}} --rm{{end}}{{if .service_ports}} --service-ports{{end}} {{.service}} {{.command}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: true
+
+      - name: command
+        description: Command to execute
+        type: string
+        required: true
+
+      - name: rm
+        description: Remove container after execution
+        type: bool
+        required: false
+
+      - name: service_ports
+        description: Enable service ports
+        type: bool
+        required: false
+
+  - name: compose kill
+    description: Force stop service containers
+    template: 'docker-compose kill{{if .signal}} -s {{.signal}}{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: signal
+        description: Signal to send
+        type: string
+        required: false
+        default: SIGKILL
+
+      - name: services
+        description: Space-separated list of services
+        type: string
+        required: false
+
+  - name: compose rm
+    description: Remove stopped service containers
+    template: 'docker-compose rm{{if .force}} -f{{end}}{{if .volumes}} -v{{end}}{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: force
+        description: Do not prompt for confirmation
+        type: bool
+        required: false
+
+      - name: volumes
+        description: Remove anonymous volumes
+        type: bool
+        required: false
+
+      - name: services
+        description: Space-separated list of services
+        type: string
+        required: false
+
+  - name: compose scale
+    description: Scale services
+    template: 'docker-compose up -d --scale {{.service}}={{.replicas}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: true
+
+      - name: replicas
+        description: Number of replicas
+        type: string
+        required: true
+
+  # ─────────────────────────────
+  # Configuration
+  # ─────────────────────────────
+  - name: compose config
+    description: Validate and view compose configuration
+    template: 'docker-compose config{{if .quiet}} -q{{end}}'
+    args:
+      - name: quiet
+        description: Only validate configuration
+        type: bool
+        required: false
+
+  - name: compose convert
+    description: Render canonical compose configuration
+    template: 'docker-compose config'
+    args: []
+
+  # ─────────────────────────────
+  # Resource management
+  # ─────────────────────────────
+  - name: compose create
+    description: Create containers without starting them
+    template: 'docker-compose create{{if .services}} {{.services}}{{end}}'
+    args:
+      - name: services
+        description: Space-separated list of services
+        type: string
+        required: false
+
+  - name: compose port
+    description: Print public port for a port binding
+    template: 'docker-compose port {{.service}} {{.private_port}}'
+    args:
+      - name: service
+        description: Service name
+        type: string
+        required: true
+
+      - name: private_port
+        description: Container port
+        type: string
+        required: true
+
+  - name: compose ls
+    description: List compose projects
+    template: 'docker-compose ls'
+    args: []
+
+  - name: compose version
+    description: Show docker-compose version
+    template: 'docker-compose version'
+    args: []
