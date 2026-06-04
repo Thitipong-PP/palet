@@ -1,0 +1,478 @@
+name: kubectl
+description: Kubernetes command-line tool for managing clusters and resources
+hidden: true
+
+commands:
+  # ─────────────────────────────
+  # Cluster information
+  # ─────────────────────────────
+  - name: kubectl version
+    description: Display kubectl and cluster version information
+    template: "kubectl version"
+    args: []
+
+  - name: kubectl cluster-info
+    description: Display cluster information
+    template: "kubectl cluster-info"
+    args: []
+
+  - name: kubectl api-resources
+    description: List supported API resources
+    template: "kubectl api-resources"
+    args: []
+
+  - name: kubectl api-versions
+    description: List supported API versions
+    template: "kubectl api-versions"
+    args: []
+
+  # ─────────────────────────────
+  # Context & configuration
+  # ─────────────────────────────
+  - name: kubectl config current-context
+    description: Show current kubeconfig context
+    template: "kubectl config current-context"
+    args: []
+
+  - name: kubectl config get-contexts
+    description: List available contexts
+    template: "kubectl config get-contexts"
+    args: []
+
+  - name: kubectl config use-context
+    description: Switch to a context
+    template: "kubectl config use-context {{.context}}"
+    args:
+      - name: context
+        description: Context name
+        type: string
+        required: true
+
+  - name: kubectl config view
+    description: Display kubeconfig
+    template: "kubectl config view"
+    args: []
+
+  # ─────────────────────────────
+  # Get resources
+  # ─────────────────────────────
+  - name: kubectl get
+    description: Get Kubernetes resources
+    template: "kubectl get {{.resource}}{{if .name}} {{.name}}{{end}}{{if .namespace}} -n {{.namespace}}{{end}}{{if .output}} -o {{.output}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type (pod, deployment, service, etc.)
+        type: string
+        required: true
+
+      - name: name
+        description: Resource name
+        type: string
+        required: false
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+      - name: output
+        description: Output format
+        type: enum
+        required: false
+        default: wide
+        choices:
+          - wide
+          - yaml
+          - json
+          - name
+
+  - name: kubectl get all
+    description: Get all resources in a namespace
+    template: "kubectl get all{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl top pods
+    description: Show pod resource usage
+    template: "kubectl top pods{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl top nodes
+    description: Show node resource usage
+    template: "kubectl top nodes"
+    args: []
+
+  # ─────────────────────────────
+  # Describe resources
+  # ─────────────────────────────
+  - name: kubectl describe
+    description: Show detailed resource information
+    template: "kubectl describe {{.resource}} {{.name}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type
+        type: string
+        required: true
+
+      - name: name
+        description: Resource name
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  # ─────────────────────────────
+  # Apply & create
+  # ─────────────────────────────
+  - name: kubectl apply
+    description: Apply configuration from file
+    template: "kubectl apply -f {{.file}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: file
+        description: Manifest file or directory
+        type: file
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+
+  - name: kubectl create
+    description: Create resources from file
+    template: "kubectl create -f {{.file}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: file
+        description: Manifest file
+        type: file
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+
+  - name: kubectl create namespace
+    description: Create a namespace
+    template: "kubectl create namespace {{.name}}"
+    args:
+      - name: name
+        description: Namespace name
+        type: string
+        required: true
+
+  # ─────────────────────────────
+  # Delete resources
+  # ─────────────────────────────
+  - name: kubectl delete
+    description: Delete a resource
+    template: "kubectl delete {{.resource}} {{.name}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type
+        type: string
+        required: true
+
+      - name: name
+        description: Resource name
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+
+  - name: kubectl delete file
+    description: Delete resources defined in a manifest
+    template: "kubectl delete -f {{.file}}"
+    args:
+      - name: file
+        description: Manifest file
+        type: file
+        required: true
+
+  # ─────────────────────────────
+  # Logs
+  # ─────────────────────────────
+  - name: kubectl logs
+    description: Show pod logs
+    template: "kubectl logs {{.pod}}{{if .container}} -c {{.container}}{{end}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: pod
+        description: Pod name
+        type: string
+        required: true
+
+      - name: container
+        description: Container name
+        type: string
+        required: false
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl logs follow
+    description: Stream pod logs
+    template: "kubectl logs -f {{.pod}}{{if .container}} -c {{.container}}{{end}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: pod
+        description: Pod name
+        type: string
+        required: true
+
+      - name: container
+        description: Container name
+        type: string
+        required: false
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  # ─────────────────────────────
+  # Exec & shell
+  # ─────────────────────────────
+  - name: kubectl exec
+    description: Execute a command in a container
+    template: "kubectl exec {{.pod}}{{if .container}} -c {{.container}}{{end}}{{if .namespace}} -n {{.namespace}}{{end}} -- {{.command}}"
+    args:
+      - name: pod
+        description: Pod name
+        type: string
+        required: true
+
+      - name: command
+        description: Command to execute
+        type: string
+        required: true
+
+      - name: container
+        description: Container name
+        type: string
+        required: false
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl shell
+    description: Open an interactive shell in a pod
+    template: "kubectl exec -it {{.pod}}{{if .container}} -c {{.container}}{{end}}{{if .namespace}} -n {{.namespace}}{{end}} -- {{.shell}}"
+    args:
+      - name: pod
+        description: Pod name
+        type: string
+        required: true
+
+      - name: shell
+        description: Shell executable
+        type: enum
+        required: false
+        default: /bin/sh
+        choices:
+          - /bin/sh
+          - /bin/bash
+
+      - name: container
+        description: Container name
+        type: string
+        required: false
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  # ─────────────────────────────
+  # Port forwarding
+  # ─────────────────────────────
+  - name: kubectl port-forward
+    description: Forward a local port to a pod or service
+    template: "kubectl port-forward {{.resource}}/{{.name}} {{.local_port}}:{{.remote_port}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type (pod or service)
+        type: enum
+        required: false
+        default: pod
+        choices:
+          - pod
+          - service
+
+      - name: name
+        description: Resource name
+        type: string
+        required: true
+
+      - name: local_port
+        description: Local port
+        type: string
+        required: true
+
+      - name: remote_port
+        description: Remote port
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  # ─────────────────────────────
+  # Scaling & rollout
+  # ─────────────────────────────
+  - name: kubectl scale
+    description: Scale a deployment or statefulset
+    template: "kubectl scale {{.resource}}/{{.name}} --replicas={{.replicas}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type
+        type: enum
+        required: false
+        default: deployment
+        choices:
+          - deployment
+          - statefulset
+          - replicaset
+
+      - name: name
+        description: Resource name
+        type: string
+        required: true
+
+      - name: replicas
+        description: Desired replica count
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl rollout restart
+    description: Restart a deployment
+    template: "kubectl rollout restart deployment/{{.name}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: name
+        description: Deployment name
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl rollout status
+    description: Check rollout status
+    template: "kubectl rollout status deployment/{{.name}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: name
+        description: Deployment name
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  # ─────────────────────────────
+  # Edit & patch
+  # ─────────────────────────────
+  - name: kubectl edit
+    description: Edit a resource
+    template: "kubectl edit {{.resource}} {{.name}}{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type
+        type: string
+        required: true
+
+      - name: name
+        description: Resource name
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  - name: kubectl patch
+    description: Patch a resource
+    template: "kubectl patch {{.resource}} {{.name}} -p '{{.patch}}'{{if .namespace}} -n {{.namespace}}{{end}}"
+    args:
+      - name: resource
+        description: Resource type
+        type: string
+        required: true
+
+      - name: name
+        description: Resource name
+        type: string
+        required: true
+
+      - name: patch
+        description: JSON patch payload
+        type: string
+        required: true
+
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
+
+  # ─────────────────────────────
+  # Context helpers
+  # ─────────────────────────────
+  - name: kubectl namespaces
+    description: List namespaces
+    template: "kubectl get namespaces"
+    args: []
+
+  - name: kubectl nodes
+    description: List cluster nodes
+    template: "kubectl get nodes -o wide"
+    args: []
+
+  - name: kubectl events
+    description: Show recent events
+    template: "kubectl get events{{if .namespace}} -n {{.namespace}}{{end}} --sort-by=.metadata.creationTimestamp"
+    args:
+      - name: namespace
+        description: Namespace
+        type: string
+        required: false
+        default: default
