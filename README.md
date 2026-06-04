@@ -29,6 +29,9 @@ source ~/.zshrc   # or source ~/.bashrc
 
 Already done? just run `palet` directly.
 
+## Setting
+In palet we have command `enable plugins`. here you can setting `on/off` plugins
+
 ## Usage
 Run palet to open the command palette.
 ```bash
