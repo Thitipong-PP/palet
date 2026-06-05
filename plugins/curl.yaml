@@ -1,0 +1,395 @@
+name: curl
+description: Transfer data from or to a server using URLs
+hidden: false
+
+commands:
+  # ─────────────────────────────────────────────
+  # Basic Requests
+  # ─────────────────────────────────────────────
+
+  - name: get
+    description: Send an HTTP GET request
+    template: 'curl{{if .headers}} -H "{{.headers}}"{{end}}{{if .follow_redirects}} -L{{end}}{{if .insecure}} -k{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: headers
+        description: "HTTP header (Header: Value)"
+        type: string
+        required: false
+      - name: follow_redirects
+        description: Follow HTTP redirects
+        type: bool
+        required: false
+      - name: insecure
+        description: Skip TLS certificate verification
+        type: bool
+        required: false
+
+  - name: post
+    description: Send an HTTP POST request
+    template: 'curl -X POST{{if .headers}} -H "{{.headers}}"{{end}}{{if .data}} -d "{{.data}}"{{end}}{{if .content_type}} -H "Content-Type: {{.content_type}}"{{end}}{{if .follow_redirects}} -L{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: data
+        description: Request body payload
+        type: string
+        required: false
+      - name: content_type
+        description: Content-Type header value
+        type: string
+        required: false
+        default: application/json
+      - name: headers
+        description: Additional HTTP header
+        type: string
+        required: false
+      - name: follow_redirects
+        description: Follow HTTP redirects
+        type: bool
+        required: false
+
+  - name: put
+    description: Send an HTTP PUT request
+    template: 'curl -X PUT{{if .headers}} -H "{{.headers}}"{{end}}{{if .data}} -d "{{.data}}"{{end}}{{if .content_type}} -H "Content-Type: {{.content_type}}"{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: data
+        description: Request body payload
+        type: string
+        required: false
+      - name: content_type
+        description: Content-Type header value
+        type: string
+        required: false
+        default: application/json
+      - name: headers
+        description: Additional HTTP header
+        type: string
+        required: false
+
+  - name: patch
+    description: Send an HTTP PATCH request
+    template: 'curl -X PATCH{{if .headers}} -H "{{.headers}}"{{end}}{{if .data}} -d "{{.data}}"{{end}}{{if .content_type}} -H "Content-Type: {{.content_type}}"{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: data
+        description: Request body payload
+        type: string
+        required: false
+      - name: content_type
+        description: Content-Type header value
+        type: string
+        required: false
+        default: application/json
+      - name: headers
+        description: Additional HTTP header
+        type: string
+        required: false
+
+  - name: delete
+    description: Send an HTTP DELETE request
+    template: 'curl -X DELETE{{if .headers}} -H "{{.headers}}"{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: headers
+        description: Additional HTTP header
+        type: string
+        required: false
+
+  - name: head
+    description: Fetch HTTP headers only
+    template: 'curl -I{{if .follow_redirects}} -L{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: follow_redirects
+        description: Follow redirects before returning headers
+        type: bool
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Authentication
+  # ─────────────────────────────────────────────
+
+  - name: basic-auth
+    description: Send request with Basic Authentication
+    template: 'curl -u "{{.username}}:{{.password}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: username
+        description: Username
+        type: string
+        required: true
+      - name: password
+        description: Password
+        type: string
+        required: true
+
+  - name: bearer-token
+    description: Send request with Bearer token authentication
+    template: 'curl -H "Authorization: Bearer {{.token}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: token
+        description: Bearer token value
+        type: string
+        required: true
+
+  # ─────────────────────────────────────────────
+  # File Transfer
+  # ─────────────────────────────────────────────
+
+  - name: download
+    description: Download a file
+    template: 'curl -L{{if .output}} -o {{.output}}{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: File URL
+        type: string
+        required: true
+      - name: output
+        description: Output file path
+        type: file
+        required: false
+
+  - name: upload-file
+    description: Upload a file with HTTP PUT
+    template: 'curl -T {{.file}} "{{.url}}"'
+    args:
+      - name: file
+        description: File to upload
+        type: file
+        required: true
+      - name: url
+        description: Destination URL
+        type: string
+        required: true
+
+  - name: form-upload
+    description: Upload file using multipart form data
+    template: 'curl -F "{{.field}}=@{{.file}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: file
+        description: File to upload
+        type: file
+        required: true
+      - name: field
+        description: Form field name
+        type: string
+        required: false
+        default: file
+
+  # ─────────────────────────────────────────────
+  # Request Body Formats
+  # ─────────────────────────────────────────────
+
+  - name: json
+    description: Send JSON payload
+    template: 'curl -X POST -H "Content-Type: application/json" -d "{{.json}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: json
+        description: JSON payload
+        type: string
+        required: true
+
+  - name: form
+    description: Send URL-encoded form data
+    template: 'curl -X POST{{if .field1}} -d "{{.field1}}"{{end}}{{if .field2}} -d "{{.field2}}"{{end}}{{if .field3}} -d "{{.field3}}"{{end}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: field1
+        description: First form field (key=value)
+        type: string
+        required: false
+      - name: field2
+        description: Second form field (key=value)
+        type: string
+        required: false
+      - name: field3
+        description: Third form field (key=value)
+        type: string
+        required: false
+
+  # ─────────────────────────────────────────────
+  # Headers & Cookies
+  # ─────────────────────────────────────────────
+
+  - name: custom-header
+    description: Send request with custom header
+    template: 'curl -H "{{.header}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: header
+        description: "Header value (Header: Value)"
+        type: string
+        required: true
+
+  - name: cookie
+    description: Send request with cookie
+    template: 'curl -b "{{.cookie}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: cookie
+        description: Cookie string
+        type: string
+        required: true
+
+  - name: save-cookies
+    description: Save cookies from response
+    template: 'curl -c {{.cookie_file}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: cookie_file
+        description: Cookie jar file
+        type: file
+        required: true
+
+  # ─────────────────────────────────────────────
+  # Debugging & Diagnostics
+  # ─────────────────────────────────────────────
+
+  - name: verbose
+    description: Send request with verbose output
+    template: 'curl -v "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+
+  - name: trace
+    description: Enable full request and response trace
+    template: 'curl --trace - "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+
+  - name: timing
+    description: Display request timing information
+    template: 'curl -o /dev/null -s -w "DNS:%{time_namelookup} Connect:%{time_connect} TLS:%{time_appconnect} TTFB:%{time_starttransfer} Total:%{time_total}\n" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+
+  # ─────────────────────────────────────────────
+  # TLS / SSL
+  # ─────────────────────────────────────────────
+
+  - name: insecure
+    description: Ignore TLS certificate validation
+    template: 'curl -k "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+
+  - name: cacert
+    description: Use a custom CA certificate
+    template: 'curl --cacert {{.cert}} "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: cert
+        description: CA certificate file
+        type: file
+        required: true
+
+  # ─────────────────────────────────────────────
+  # Proxy
+  # ─────────────────────────────────────────────
+
+  - name: proxy
+    description: Send request through a proxy server
+    template: 'curl -x "{{.proxy}}" "{{.url}}"'
+    args:
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: proxy
+        description: Proxy URL
+        type: string
+        required: true
+
+  # ─────────────────────────────────────────────
+  # HTTP Methods (Generic)
+  # ─────────────────────────────────────────────
+
+  - name: request
+    description: Send request using a custom HTTP method
+    template: 'curl -X {{.method}}{{if .headers}} -H "{{.headers}}"{{end}}{{if .data}} -d "{{.data}}"{{end}} "{{.url}}"'
+    args:
+      - name: method
+        description: HTTP method
+        type: enum
+        required: true
+        choices:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - HEAD
+          - OPTIONS
+      - name: url
+        description: Target URL
+        type: string
+        required: true
+      - name: headers
+        description: HTTP header
+        type: string
+        required: false
+      - name: data
+        description: Request body
+        type: string
+        required: false
