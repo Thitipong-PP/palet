@@ -66,3 +66,9 @@ template: "git commit -m \"{{.message}}\""
 # Output
 
 Return only the YAML file content, no explanation.
+
+---
+
+# Warning
+
+If some field you using coron(:) you need to using quotes (yaml structure will not running if you forgot)
