@@ -31,6 +31,7 @@ Already done? just run `palet` directly.
 
 ## Setting
 In palet we have command `enable plugins`. here you can setting `on/off` plugins
+<img width="1470" height="923" alt="Image" src="https://github.com/user-attachments/assets/b5697958-643b-4c7a-8368-9b4fbd9233b7" />
 
 ## Usage
 Run palet to open the command palette.
